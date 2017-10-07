@@ -29,7 +29,7 @@
 		    config.loginurl+
 		    '&client_id='+config.clientid+
           	    '&resource='+config.resource+
-          	    '&redirect_uri='+ config.replyurl
+          	    '&redirect_uri='+ config.docReplyurl
 		    );
 	}
     };
@@ -55,7 +55,7 @@
       document.getElementById('AdminConsent').onclick= function(){
         location.assign('https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token'+
           '&client_id='+config.clientid+
-          '&redirect_uri='+config.replyurl+
+          '&redirect_uri='+config.docReplyurl+
           //'&response_mode=form_post'+ //Because it is static web page and cant' handle post method, I comment out it.
           '&nonce=samplestring'+// You can add code to defend Replay Attack with nonce property
           '&resource='+config.resource+
@@ -88,9 +88,10 @@
                 conversation.selfParticipant.audio.state.changed(function (newValue, reason, oldValue) {
                   // 'Notified' indicates that there is an incoming call
                   if(newValue === 'Notified') {
-                    var sip = conversation.participants(0).person.id();
+                    var person = conversation.participants(0).person;;
+                    var sip = person.id();
 
-                    if (confirm("Would you like to accept this incoming call?")) {
+                    if (confirm("Would you like to accept this incoming call from " + person.displayName() + "?")) {
                         setTimeout(function() {
                             var container = document.getElementById(sip);
                             if(!container){
@@ -98,10 +99,10 @@
                               container.id = sip;
                               document.getElementById("conversationWindow").appendChild(container);
 
-                              //render conversation controll
+                              //render conversation control
                               var promise = apiManager.renderConversation(container,{
-                                //Start outgoing call with chat and audio
-                                modalities:['Chat','Audio'],
+                                //Start outgoing call.
+                                modalities:['Chat'],
                                 participants : [sip]
                               }).then(function(conversation){
                                 console.log('Conversation rendered successfully');

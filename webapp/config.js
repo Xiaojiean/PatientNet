@@ -15,8 +15,8 @@ var config = {
     resource: 'https://webdir.online.lync.com', //Skype SDK resource.Fixed
     loginurl: 'https://login.microsoftonline.com/common/oauth2/authorize?response_type=token', //Microsoft OAuth login url for AAD.Fixed
 
-    //Action Required : Need to set your app's specific value. Please README.MD file and follow "Update config.js" section.
     clientid: '16f92412-7c31-48e4-97c8-ed1625bc853d', //client id created in Azure AD
-    replyurl: 'https://481patientnet.com/index.html', //replyurl you set in Azure AD
+    docReplyurl: 'https://481patientnet.com/index.html', //replyurl you set in Azure AD
+    clientReplyurl: 'https://481patientnet.com/client.html', //replyurl you set in Azure AD
     appName: 'skypewebsample' //Application Name registered in Azure AD
 };
