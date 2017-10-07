@@ -18,7 +18,7 @@
   <div id="SigninStatus"></div>
   <div id="conversationWindow"></div>
   <div id="conversationContainer"></div>
-  
+
   <script type="text/javascript">
     var apiManager = null;
     var client = null;
@@ -43,10 +43,10 @@
           if(elemarr[0] == "access_token") {
             console.log('Access Token: '+ elemarr[1]);
 	    skypeInit(skypeLogin);
-	  } 
+	  }
         }, this);
       }
-      
+
       /*
       Grant app with Admin Consent
       You can see more information in the document below
@@ -62,7 +62,7 @@
           '&prompt=admin_consent'
         );
       };
-           
+
       /*
       Initializing Skype Web SDK & Conversation Control.
       On success, will login in the user to Sype as well by making a callback.
@@ -83,7 +83,7 @@
 
               //Event handler : it is handled when conversations added. ie. incoming call, outgoing call
               client.conversationsManager.conversations.added(function(conversation){
-             
+
                 //Event handler : Get notified when conversation control receives an incoming call
                 conversation.selfParticipant.audio.state.changed(function (newValue, reason, oldValue) {
                   // 'Notified' indicates that there is an incoming call
@@ -117,13 +117,13 @@
                         conversation.audioService.reject();
                     }
                   }
-                });            
+                });
               });
           }, function(err){
-            console.log(err); 
+            console.log(err);
           });
-      }     
-      
+      }
+
       /*
       Sign-in Skype
       You can learn more from the link below
@@ -136,37 +136,28 @@
          "origins": ["https://webdir.online.lync.com/autodiscover/autodiscoverservice.svc/root"],
          "cors": true,
          "version": config.appName+'/1.0.0',
-         "redirect_uri": "/index.html"
+         "redirect_uri": "/client.html"
         };
-        
+
         client.signInManager.signIn(params).then(function(){
           document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + client.personsAndGroupsManager.mePerson.displayName();
         },function(error){
           console.log(error);
-        });        
+        });
       };
-      
+
       /*
       Render conversation control on outgoing call
       You can get more information with the reference below.
       https://msdn.microsoft.com/en-us/skype/websdk/useconversationcontrol#render-conversation-control-on-outgoing-call
       */
       document.getElementById('startChat').onclick=function(){
-        //show prompt in the browser
-        var input = prompt('SIP URIs of the participants:','sip:example@example.com,sip:example2@example.com');
+	//TODO: Show contact list instead of auto populating this contact.
+	var uris = ['sip:tsaoa@patientNet2.onmicrosoft.com'];
+        var container = document.createElement('div');
+        document.getElementById("conversationWindow").appendChild(container);
 
-        if(!input)
-          return;
-        var uris = input.split(',').map(function(s){return s.trim();});
-        console.log('participants:',uris);
-        
-        var container = document.getElementById(input);
-        if(!container){
-          container = document.createElement('div');
-          container.id = input;
-          document.getElementById("conversationWindow").appendChild(container);
-        }
-        //render Conversation Control in a web page.
+	//render Conversation Control in a web page.
         var promise = apiManager.renderConversation(container,{
           //Start outgoing call with chat window
           modalities:['Chat'],
@@ -178,11 +169,11 @@
 	}, function(error) {
 		console.log("Error: " + error);
 	});
-/*
+    /*
 	var newDiv = document.createElement('div');
 	var control = document.getElementById('conversationContainer');
 	control.appendChild(newDiv);
-	
+
         apiManager.renderConversation(newDiv,{
           //Start outgoing call with chat window
           modalities:['Chat'],
@@ -195,7 +186,7 @@
 	});
 	*/
 
-      };      
+      };
     }());
   </script>
 </body>
