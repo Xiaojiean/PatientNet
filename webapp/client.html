@@ -49,8 +49,6 @@
 
       /*
       Grant app with Admin Consent
-      You can see more information in the document below
-      https://msdn.microsoft.com/en-us/skype/websdk/developwebsdkappsforsfbonline#tenant-administrator-consent-flow
       */
       document.getElementById('AdminConsent').onclick= function(){
         location.assign('https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token'+
@@ -66,8 +64,6 @@
       /*
       Initializing Skype Web SDK & Conversation Control.
       On success, will login in the user to Sype as well by making a callback.
-      You can learn more with the document below
-      https://msdn.microsoft.com/en-us/skype/websdk/useconversationcontrol#initialize-the-skype-web-sdk-api-endpoint
       */
       function skypeInit(_loginCallback) {
           Skype.initialize({apiKey:config.apiKeyCC},function(api){
@@ -127,8 +123,6 @@
 
       /*
       Sign-in Skype
-      You can learn more from the link below
-      https://msdn.microsoft.com/en-us/skype/websdk/developwebsdkappsforsfbonline#support-for-oauth2-in-internet-explorer
       */
       function skypeLogin(){
         var params =
@@ -142,6 +136,7 @@
 
         client.signInManager.signIn(params).then(function(){
           document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + client.personsAndGroupsManager.mePerson.displayName();
+	  loadChat();
         },function(error){
           console.log(error);
         });
@@ -149,10 +144,8 @@
 
       /*
       Render conversation control on outgoing call
-      You can get more information with the reference below.
-      https://msdn.microsoft.com/en-us/skype/websdk/useconversationcontrol#render-conversation-control-on-outgoing-call
       */
-      document.getElementById('startChat').onclick=function(){
+      function loadChat(){
 	//TODO: Show contact list instead of auto populating this contact.
 	var uris = ['sip:tsaoa@patientNet2.onmicrosoft.com'];
         var container = document.createElement('div');
