@@ -152,21 +152,12 @@
       https://msdn.microsoft.com/en-us/skype/websdk/useconversationcontrol#render-conversation-control-on-outgoing-call
       */
       document.getElementById('startChat').onclick=function(){
-        //show prompt in the browser
-        var input = prompt('SIP URIs of the participants:','sip:example@example.com,sip:example2@example.com');
-
-        if(!input)
-          return;
-        var uris = input.split(',').map(function(s){return s.trim();});
-        console.log('participants:',uris);
+	//TODO: Show contact list instead of auto populating this contact.
+	var uris = ['sip:tsaoa@patientNet2.onmicrosoft.com'];
+        var container = document.createElement('div');
+        document.getElementById("conversationWindow").appendChild(container);
         
-        var container = document.getElementById(input);
-        if(!container){
-          container = document.createElement('div');
-          container.id = input;
-          document.getElementById("conversationWindow").appendChild(container);
-        }
-        //render Conversation Control in a web page.
+	//render Conversation Control in a web page.
         var promise = apiManager.renderConversation(container,{
           //Start outgoing call with chat window
           modalities:['Chat'],
@@ -178,7 +169,7 @@
 	}, function(error) {
 		console.log("Error: " + error);
 	});
-/*
+	/*
 	var newDiv = document.createElement('div');
 	var control = document.getElementById('conversationContainer');
 	control.appendChild(newDiv);
