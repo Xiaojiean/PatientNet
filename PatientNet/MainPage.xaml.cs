@@ -21,6 +21,8 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using Windows.ApplicationModel.Contacts;
+using Windows.Devices.Sms;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -34,6 +36,8 @@ namespace PatientNet
         MediaCapture _mediaCapture;
         bool _isPreviewing;
         DisplayRequest _displayRequest = new DisplayRequest();
+        string phoneNumber = null;
+        // private SmsDevice2 device;
 
         public MainPage()
         {
@@ -120,7 +124,6 @@ namespace PatientNet
                     _mediaCapture = null;
                 });
             }
-
         }
 
         private async void StartButton_Click(object sender, RoutedEventArgs e)
@@ -131,6 +134,110 @@ namespace PatientNet
         private async void StopButton_Click(object sender, RoutedEventArgs e)
         {
             await CleanupCameraAsync();
+        }
+
+        // Doesn't quite work
+        private void PhoneDownHandler(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                phoneNumber = Phone.Text;
+                Call_Click(sender, e);
+            }
+        }
+
+        // Try to send sms - TODO: Don't know if I need this function
+        private async void ComposeSms(Windows.ApplicationModel.Contacts.Contact recipient, string messageBody,
+            StorageFile attachmentFile, string mimeType)
+        {
+            var chatMessage = new Windows.ApplicationModel.Chat.ChatMessage();
+            chatMessage.Body = messageBody;
+
+            if (attachmentFile != null)
+            {
+                var stream = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromFile(attachmentFile);
+
+                var attachment = new Windows.ApplicationModel.Chat.ChatMessageAttachment(
+                    mimeType,
+                    stream);
+
+                chatMessage.Attachments.Add(attachment);
+            }
+
+            var phone = recipient.Phones.FirstOrDefault<Windows.ApplicationModel.Contacts.ContactPhone>();
+            if (phone != null)
+            {
+                chatMessage.Recipients.Add(phone.Number);
+            }
+            await Windows.ApplicationModel.Chat.ChatMessageManager.ShowComposeSmsMessageAsync(chatMessage);
+        }
+
+        private async void SendSMS(Contact recipient, string message)
+        {
+            var chatMessage = new Windows.ApplicationModel.Chat.ChatMessage();
+            chatMessage.Body = message;
+
+            var phone = recipient.Phones.FirstOrDefault<Windows.ApplicationModel.Contacts.ContactPhone>();
+            if (phone != null)
+            {
+                chatMessage.Recipients.Add(phone.Number);
+                await Windows.ApplicationModel.Chat.ChatMessageManager.ShowComposeSmsMessageAsync(chatMessage);
+            }
+        }
+
+        private async void Call_Click(object sender, RoutedEventArgs e)
+        {
+            if (phoneNumber == null)
+            {
+                phoneNumber = Phone.Text;
+            }
+            if (phoneNumber.Length < 10)
+            {
+                Phone.Text = String.Empty;
+                Phone.PlaceholderText = "Invalid Number";
+                phoneNumber = null;
+            }
+            else
+            {
+                phoneNumber = "1" + phoneNumber;
+
+                /*
+                Contact recipient = new Windows.ApplicationModel.Contacts.Contact();
+                recipient.Name = "Doctor";
+                recipient.Phones.Add(new ContactPhone() { Kind = ContactPhoneKind.Mobile, Number = phoneNumber });
+
+                string message = "TEST MESSAGE";
+
+                SendSMS(recipient, message);
+                */
+                // TODO: Device capabilities?? Restricted ones
+
+                SmsDevice2 device = SmsDevice2.GetDefault();
+               // if (device == null)
+               // {
+                try
+                {
+                    device = SmsDevice2.GetDefault();
+                }
+                catch(Exception ex)
+                {
+                    Phone.Text = ex.Message;
+                    return;
+                }
+                // }
+                if (device != null)
+                {
+                    SmsTextMessage2 msg = new SmsTextMessage2();
+                    msg.To = phoneNumber;
+                    msg.Body = "This is a test";
+                    SmsSendMessageResult result = await device.SendMessageAndGetResultAsync(msg);
+                }
+                else
+                {
+                    Phone.Text = "UH OH";
+                }
+                
+            }
         }
     }
 }

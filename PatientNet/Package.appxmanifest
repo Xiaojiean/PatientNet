@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
-  <Identity Name="d4ba08e7-9f5a-4eb0-af28-627785f98223" Publisher="CN=Austin" Version="1.0.0.0" />
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" IgnorableNamespaces="uap rescap mp">
+  <Identity Name="d4ba08e7-9f5a-4eb0-af28-627785f98223" Publisher="CN=Austin" Version="1.0.3.0" />
   <mp:PhoneIdentity PhoneProductId="d4ba08e7-9f5a-4eb0-af28-627785f98223" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>PatientNet</DisplayName>
@@ -16,7 +16,12 @@
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="PatientNet.App">
       <uap:VisualElements DisplayName="PatientNet" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" Description="PatientNet" BackgroundColor="transparent">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png">
+        <uap:LockScreen Notification="badge" BadgeLogo="Assets\BadgeLogo.png" />
+        <uap:DefaultTile Square310x310Logo="Assets\LargeTile.png" Square71x71Logo="Assets\SmallTile.png" Wide310x150Logo="Assets\Wide310x150Logo.png">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo" />
+            <uap:ShowOn Tile="square310x310Logo" />
+          </uap:ShowNameOnTiles>
         </uap:DefaultTile>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
@@ -24,8 +29,19 @@
   </Applications>
   <Capabilities>
     <Capability Name="internetClient" />
+    <Capability Name="internetClientServer" />
     <uap:Capability Name="picturesLibrary" />
     <uap:Capability Name="videosLibrary" />
+    <uap:Capability Name="contacts" />
+    <uap:Capability Name="chat" />
+    <uap:Capability Name="phoneCall" />
+    <rescap:Capability Name="cellularMessaging" />
+    <!--
+    <rescap:Capability Name="cellularDeviceIdentity" />
+    <rescap:Capability Name="cellularDeviceControl" />
+    <rescap:Capability Name="cellularMessaging" />
+    <rescap:Capability Name="smsSend" />
+    -->
     <DeviceCapability Name="microphone" />
     <DeviceCapability Name="webcam" />
   </Capabilities>
