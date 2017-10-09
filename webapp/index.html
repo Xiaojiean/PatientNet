@@ -68,7 +68,7 @@
       function skypeInit(_loginCallback) {
           Skype.initialize({apiKey:config.apiKeyCC},function(api){
               apiManager = api;
-              client = apiManager.UIApplicationInstance;
+              client = api.UIApplicationInstance;
               document.getElementById('SdKStatus').innerHTML = 'Skype Web SDK & Conversation Control Initialize success!';
 	      _loginCallback();
 
@@ -89,7 +89,7 @@
 
                     if (confirm("Would you like to accept this incoming call from " + person.displayName() + "?")) {
                         setTimeout(function() {
-                            var container = document.getElementById(sip);
+                            /*var container = document.getElementById(sip);
                             if(!container){
                               container = document.createElement('div');
                               container.id = sip;
@@ -103,11 +103,11 @@
                               }).then(function(conversation){
                                 console.log('Conversation rendered successfully');
                               });
-                            }
+                            }*/
                             // This accepts an incoming call with audio
-                            conversation.audioService.accept();
+                            //conversation.audioService.accept();
                             // To accept an incoming call with video enabled call
-                            // conversation.videoService.accept()
+                            conversation.videoService.accept()
                         }, 0);
                     } else {
                         // Reject the incoming call
@@ -146,9 +146,10 @@
       function scheduleMeeting() {
       	var meeting = client.conversationsManager.createMeeting()
 		.accessLevel("Everyone")
-		.subject("Test meeting");
+		.subject("Test meeting")
 	meeting.onlineMeetingUri.get().then(uri => {
 		console.log("Started meeting. Uri: " + uri);
+		//TODO: figure out how to send this url to client.
 		var conversation = client.conversationsManager.getConversationByUri(uri);
 		loadChat(conversation);
 	}); 

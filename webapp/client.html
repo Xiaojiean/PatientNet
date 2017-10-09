@@ -43,9 +43,11 @@
           if(elemarr[0] == "access_token") {
             console.log('Access Token: '+ elemarr[1]);
 	    skypeInit(skypeLogin);
+	    //skypeInit(anonymousLogin);
 	  }
         }, this);
       }
+      //skypeInit(anonymousLogin);
 
       /*
       Grant app with Admin Consent
@@ -68,7 +70,7 @@
       function skypeInit(_loginCallback) {
           Skype.initialize({apiKey:config.apiKeyCC},function(api){
               apiManager = api;
-              client = apiManager.UIApplicationInstance;
+              client = api.UIApplicationInstance;
               document.getElementById('SdKStatus').innerHTML = 'Skype Web SDK & Conversation Control Initialize success!';
 	      _loginCallback();
 
@@ -122,6 +124,26 @@
       }
 
       /*
+	 Anonymous sign-in.
+      */
+      function anonymousLogin(){
+      	var uri = "sip:tsaoa@patientnet2.onmicrosoft.com;gruu;opaque=app:conf:focus:id:QDJ72GE4";
+	var params = 
+	{
+	 "name": "Emergency Contact",
+	 "meeting": uri,
+	 "version": config.appName+'/1.0.0'
+	};
+        client.signInManager.signIn(params).then(function(){
+          document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + client.personsAndGroupsManager.mePerson.displayName();
+	  var conversation = client.conversationsManager.getConversationByUri(uri);
+	  loadChat(conversation);
+	},function(error){
+	  console.log("Error signing in: " + error);
+	});
+      }
+
+      /*
       Sign-in Skype
       */
       function skypeLogin(){
@@ -136,7 +158,9 @@
 
         client.signInManager.signIn(params).then(function(){
           document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + client.personsAndGroupsManager.mePerson.displayName();
-	  loadChat();
+      	  var uri = "sip:tsaoa@patientnet2.onmicrosoft.com;gruu;opaque=app:conf:focus:id:2MJ3F24I";
+	  var conversation = client.conversationsManager.getConversationByUri(uri);
+	  loadChat(conversation);
         },function(error){
           console.log(error);
         });
@@ -145,7 +169,7 @@
       /*
       Render conversation control on outgoing call
       */
-      function loadChat(){
+      function loadChat(conversation){
 	//TODO: Show contact list instead of auto populating this contact.
 	var uris = ['sip:tsaoa@patientNet2.onmicrosoft.com'];
         var container = document.createElement('div');
@@ -155,7 +179,7 @@
         var promise = apiManager.renderConversation(container,{
           //Start outgoing call with chat window
           modalities:['Chat'],
-          participants: uris
+          conversation: conversation
         })
 	promise.then(function(conversation) {
 		//Rendered successfully
