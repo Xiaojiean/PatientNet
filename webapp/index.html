@@ -68,7 +68,7 @@
       function skypeInit(_loginCallback) {
           Skype.initialize({apiKey:config.apiKeyCC},function(api){
               apiManager = api;
-              client = apiManager.UIApplicationInstance;
+              client = api.UIApplicationInstance;
               document.getElementById('SdKStatus').innerHTML = 'Skype Web SDK & Conversation Control Initialize success!';
 	      _loginCallback();
 
@@ -89,7 +89,7 @@
 
                     if (confirm("Would you like to accept this incoming call from " + person.displayName() + "?")) {
                         setTimeout(function() {
-                            var container = document.getElementById(sip);
+                            /*var container = document.getElementById(sip);
                             if(!container){
                               container = document.createElement('div');
                               container.id = sip;
@@ -103,11 +103,11 @@
                               }).then(function(conversation){
                                 console.log('Conversation rendered successfully');
                               });
-                            }
+                            }*/
                             // This accepts an incoming call with audio
-                            conversation.audioService.accept();
+                            //conversation.audioService.accept();
                             // To accept an incoming call with video enabled call
-                            // conversation.videoService.accept()
+                            conversation.videoService.accept()
                         }, 0);
                     } else {
                         // Reject the incoming call
@@ -136,26 +136,40 @@
         
         client.signInManager.signIn(params).then(function(){
           document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + client.personsAndGroupsManager.mePerson.displayName();
-	  loadChat();
+	  //loadChat();
+	  scheduleMeeting();
         },function(error){
           console.log(error);
         });        
       };
+
+      function scheduleMeeting() {
+      	var meeting = client.conversationsManager.createMeeting()
+		.accessLevel("Everyone")
+		.subject("Test meeting")
+	meeting.onlineMeetingUri.get().then(uri => {
+		console.log("Started meeting. Uri: " + uri);
+		//TODO: figure out how to send this url to client.
+		var conversation = client.conversationsManager.getConversationByUri(uri);
+		loadChat(conversation);
+	}); 
+      }
       
       /*
       Render conversation control on outgoing call
       */
-      function loadChat(){
+      function loadChat(conversation){
 	//TODO: Show contact list instead of auto populating this contact.
 	var uris = ['sip:tsaoa@patientNet2.onmicrosoft.com'];
         var container = document.createElement('div');
         document.getElementById("conversationWindow").appendChild(container);
-        
+	
 	//render Conversation Control in a web page.
         var promise = apiManager.renderConversation(container,{
           //Start outgoing call with chat window
           modalities:['Chat'],
-          participants: uris
+	  conversation: conversation
+          //participants: uris
         })
 	promise.then(function(conversation) {
 		//Rendered successfully
@@ -180,7 +194,19 @@
 	});
 	*/
 
-      };      
+      };
+
+      function showContacts() {
+	var tagContactList = createGroupView(client.personsAndGroupsManager.all.persons, 'Contact List');
+	//var control = document.getElementById('conversationContainer');
+	//control.appendChild(tagName);
+      };
+      
+      function createGroupView(contacts, title) {
+      	//var tagName = document.createElement('div');
+	//tagname.className += " group-name";
+      	console.log(contacts);
+      }
     }());
   </script>
 </body>
