@@ -194,7 +194,19 @@
 	});
 	*/
 
-      };      
+      };
+
+      function showContacts() {
+	var tagContactList = createGroupView(client.personsAndGroupsManager.all.persons, 'Contact List');
+	//var control = document.getElementById('conversationContainer');
+	//control.appendChild(tagName);
+      };
+      
+      function createGroupView(contacts, title) {
+      	//var tagName = document.createElement('div');
+	//tagname.className += " group-name";
+      	console.log(contacts);
+      }
     }());
   </script>
 </body>
