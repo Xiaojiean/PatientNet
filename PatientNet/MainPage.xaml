@@ -16,6 +16,6 @@
         <CaptureElement Name="PreviewControl" Stretch="Uniform" Margin="10,143,10,0"/>
         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,30,0,0" IsDoubleTapEnabled="False" IsHoldingEnabled="False" IsRightTapEnabled="False" IsTapEnabled="False"  FontSize="36" FontFamily="Segoe UI Semibold"> <Bold> PatientNet </Bold></TextBlock>
         <TextBox x:Name="Phone" Background="LightSkyBlue" Width="145" Header="Enter Phone Number" PlaceholderText="XXXXXXXXXX" InputScope="Number" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="354,150,354,0" MaxLength="10" Height="62" KeyDown="PhoneDownHandler"/>
-        <Button x:Name="Call" Background="LightSkyBlue"  Content="Call Doctor" HorizontalAlignment="Center" Margin="0,250,0,0" VerticalAlignment="Top" Width="106" Click="Call_Click"/>
+        <Button x:Name="Call" Background="LightSkyBlue"  Content="Notify Emergency Contact" HorizontalAlignment="Center" Margin="0,250,0,0" VerticalAlignment="Top" Width="200" Click="Call_Click"/>
     </Grid>
 </Page>

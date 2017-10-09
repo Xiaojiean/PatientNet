@@ -28,6 +28,8 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
 using System.Text;
+using Windows.Data.Xml.Dom;
+using Windows.UI.Notifications;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -42,7 +44,6 @@ namespace PatientNet
         bool _isPreviewing;
         DisplayRequest _displayRequest = new DisplayRequest();
         string phoneNumber = null;
-        private SmsDevice2 device;
         private MainPage rootPage;
 
         public MainPage()
@@ -203,19 +204,21 @@ namespace PatientNet
             try
             {
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(phoneNumber), Encoding.UTF8, "application/json");
-                System.Console.WriteLine("Sending " + phoneNumber + " to " + endpoint);
+                System.Diagnostics.Debug.WriteLine("Sending " + phoneNumber + " to " + endpoint);
                 HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    string jsonResponse = await response.Content.ReadAsStringAsync();
-                    Phone.Text = "Successful";
-                    //do something with json response here
+                    ShowToast("SendHTTP()", "Successful");
+                }
+                else
+                {
+                    ShowToast("SendHTTP()", "Unsuccessful");
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                ShowToast("Exception", ex.Message);
             }
         }
 
@@ -226,54 +229,43 @@ namespace PatientNet
             {
                 phoneNumber = Phone.Text;
             }
+
             if (phoneNumber.Length < 10)
             {
-                Phone.Text = String.Empty;
-                Phone.PlaceholderText = "Invalid Number";
+                ShowToast("title", "Invalid Number");
                 phoneNumber = null;
             }
             else
             {
                 phoneNumber = "1" + phoneNumber;
-
-                // Don't do it this way
-                /*
-                Contact recipient = new Windows.ApplicationModel.Contacts.Contact();
-                recipient.Name = "Doctor";
-                recipient.Phones.Add(new ContactPhone() { Kind = ContactPhoneKind.Mobile, Number = phoneNumber });
-
-                string message = "TEST MESSAGE";
-
-                SendSMS(recipient, message);
-                */
-
-
-                // TODO: Need to get cellularMessaging restricted capability from Microsoft - I'm pretty sure this is why it's not working
-                if (device == null)
-                {
-                    try
-                    {
-                        SendHTTP();
-                    }
-                    catch(Exception ex)
-                    {
-                        Phone.Text = ex.Message;
-                        return;
-                    }
-                }
-                if (device != null)
-                {
-                    SmsTextMessage2 msg = new SmsTextMessage2();
-                    msg.To = phoneNumber;
-                    msg.Body = "This is a test";
-                    SmsSendMessageResult result = await device.SendMessageAndGetResultAsync(msg);
-                }
-                else
-                {
-                    Phone.Text = "UH OH";
-                }
                 
+                try
+                {
+                    SendHTTP();
+                }
+                catch(Exception ex)
+                {
+                    ShowToast("Call_Click()", ex.Message);
+                    return;
+                }                
             }
+        }
+
+        private static void ShowToast(string title, string content)
+        {
+            XmlDocument toastXml = new XmlDocument();
+            string xml = $@"
+                <toast activationType='foreground'>
+                <visual>
+                <binding template='ToastGeneric'>
+                    <text>{title}</text>
+                    <text>{content}</text>
+                </binding>
+                </visual>
+                </toast>";
+            toastXml.LoadXml(xml);
+            ToastNotification toast = new ToastNotification(toastXml);
+            ToastNotificationManager.CreateToastNotifier().Show(toast);
         }
     }
 }
