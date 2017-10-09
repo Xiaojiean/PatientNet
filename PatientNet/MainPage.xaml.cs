@@ -23,6 +23,11 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.ApplicationModel.Contacts;
 using Windows.Devices.Sms;
+//using Windows.Web.Http;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using Newtonsoft.Json;
+using System.Text;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -186,6 +191,35 @@ namespace PatientNet
             }
         }
 
+        private async void SendHTTP()
+        {
+            HttpClient httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri("http://481patientnet.com");
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
+
+            string endpoint = @"/api/v1/sendsms";
+
+            try
+            {
+                HttpContent content = new StringContent(JsonConvert.SerializeObject(phoneNumber), Encoding.UTF8, "application/json");
+                System.Console.WriteLine("Sending " + phoneNumber + " to " + endpoint);
+                HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string jsonResponse = await response.Content.ReadAsStringAsync();
+                    Phone.Text = "Successful";
+                    //do something with json response here
+                }
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+
         private async void Call_Click(object sender, RoutedEventArgs e)
         {
             if (phoneNumber == null)
@@ -219,7 +253,7 @@ namespace PatientNet
                 {
                     try
                     {
-                        device = SmsDevice2.GetDefault();
+                        SendHTTP();
                     }
                     catch(Exception ex)
                     {
