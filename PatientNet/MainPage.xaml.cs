@@ -37,7 +37,8 @@ namespace PatientNet
         bool _isPreviewing;
         DisplayRequest _displayRequest = new DisplayRequest();
         string phoneNumber = null;
-        // private SmsDevice2 device;
+        private SmsDevice2 device;
+        private MainPage rootPage;
 
         public MainPage()
         {
@@ -201,6 +202,7 @@ namespace PatientNet
             {
                 phoneNumber = "1" + phoneNumber;
 
+                // Don't do it this way
                 /*
                 Contact recipient = new Windows.ApplicationModel.Contacts.Contact();
                 recipient.Name = "Doctor";
@@ -210,21 +212,21 @@ namespace PatientNet
 
                 SendSMS(recipient, message);
                 */
-                // TODO: Device capabilities?? Restricted ones
 
-                SmsDevice2 device = SmsDevice2.GetDefault();
-               // if (device == null)
-               // {
-                try
+
+                // TODO: Need to get cellularMessaging restricted capability from Microsoft - I'm pretty sure this is why it's not working
+                if (device == null)
                 {
-                    device = SmsDevice2.GetDefault();
+                    try
+                    {
+                        device = SmsDevice2.GetDefault();
+                    }
+                    catch(Exception ex)
+                    {
+                        Phone.Text = ex.Message;
+                        return;
+                    }
                 }
-                catch(Exception ex)
-                {
-                    Phone.Text = ex.Message;
-                    return;
-                }
-                // }
                 if (device != null)
                 {
                     SmsTextMessage2 msg = new SmsTextMessage2();

@@ -44,5 +44,6 @@
     -->
     <DeviceCapability Name="microphone" />
     <DeviceCapability Name="webcam" />
+    <DeviceCapability Name="BFCD56F7-3943-457F-A312-2E19BB6DC648" /> <!-- Mobile Broadband Account API -->
   </Capabilities>
 </Package>
