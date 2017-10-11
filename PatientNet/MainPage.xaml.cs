@@ -203,8 +203,10 @@ namespace PatientNet
 
             try
             {
-                HttpContent content = new StringContent(JsonConvert.SerializeObject(phoneNumber), Encoding.UTF8, "application/json");
-                System.Diagnostics.Debug.WriteLine("Sending " + phoneNumber + " to " + endpoint);
+                string info = @"{ 'number': '" + phoneNumber + "' }";
+                var serialized = JsonConvert.SerializeObject(info);
+                HttpContent content = new StringContent(serialized, Encoding.UTF8, "application/json");
+                System.Diagnostics.Debug.WriteLine("Sending " + info + " to " + endpoint);
                 HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
 
                 if (response.IsSuccessStatusCode)
