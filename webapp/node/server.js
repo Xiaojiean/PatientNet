@@ -36,6 +36,7 @@ app.post('/api/v1/sendsms', function(req, res) {
 	console.log('Received: ' + req.body.number);
 	var obj = {};
 	obj['number'] = req.body.number;
+	obj['message'] = JSON.stringify(req.body);
 	if(wsClients.length == 0) {
 		res.status(500).send("No doctors connected");
 		return;

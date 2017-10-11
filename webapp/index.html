@@ -36,12 +36,13 @@
 		    '&client_id='+config.clientid+
           	    '&resource='+config.resource+
           	    '&redirect_uri='+ config.docReplyurl
-		    );
+		);
 	}
       if (wsc == null) {
 	      wsc = new WebSocket(cfg.wsHost);
     	      wsc.onmessage = function(evt) {
 		      var signal = JSON.parse(evt.data);
+		      console.log("Server received message: " + signal.message);
 		      if(signal.number) {
 			var obj = {};
 			obj['link'] = linkuri;
