@@ -45,6 +45,7 @@ namespace PatientNet
         DisplayRequest _displayRequest = new DisplayRequest();
         string phoneNumber = null;
         private MainPage rootPage;
+        string skypeName = null;
 
         public MainPage()
         {
@@ -152,6 +153,14 @@ namespace PatientNet
                 Call_Click(sender, e);
             }
         }
+        private void SkypeNameDownHandler(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                skypeName = SkypeName.Text;
+                CallDoctor_Click(sender, e);
+            }
+        }
 
         // Try to send sms - TODO: Don't know if I need this function
         private async void ComposeSms(Windows.ApplicationModel.Contacts.Contact recipient, string messageBody,
@@ -192,14 +201,29 @@ namespace PatientNet
             }
         }
 
-        private async void SendHTTP()
+        /* Used to send phone numbers and skype names
+         * type: 
+         *  - 0: phone number
+         *  - 1: skype name
+         */
+        private async void SendHTTP(string message, string endpoint, int type)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri("http://481patientnet.com");
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            string content_type = null;
+            switch (type)
+            { 
+                case 0:
+                    content_type = "application/phonenumber";
+                    break;
+                case 1:
+                    content_type = "application/skypename";
+                    break;
+                default:
+                    break;
+            }
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(content_type));
             httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
-
-            string endpoint = @"/api/v1/sendsms";
 
             try
             {
@@ -225,7 +249,7 @@ namespace PatientNet
         }
 
 
-        private async void Call_Click(object sender, RoutedEventArgs e)
+        private void Call_Click(object sender, RoutedEventArgs e)
         {
             if (phoneNumber == null)
             {
@@ -243,13 +267,32 @@ namespace PatientNet
                 
                 try
                 {
-                    SendHTTP();
+                    string endpoint = @"/api/v1/sendsms";
+                    SendHTTP(phoneNumber, endpoint, 0);
                 }
                 catch(Exception ex)
                 {
                     ShowToast("Call_Click()", ex.Message);
                     return;
                 }                
+            }
+        }
+
+        private void CallDoctor_Click(object sender, RoutedEventArgs e)
+        {
+            if (skypeName == null)
+            {
+                skypeName = SkypeName.Text;
+            }
+            try
+            {
+                string endpoint = @"/api/v1/requestdoctor";
+                SendHTTP(skypeName, endpoint, 1);
+            }
+            catch (Exception ex)
+            {
+                ShowToast("CallDoctor_Click()", ex.Message);
+                return;
             }
         }
 

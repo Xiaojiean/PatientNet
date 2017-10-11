@@ -22,6 +22,12 @@
   <script type="text/javascript">
     var apiManager = null;
     var client = null;
+    var cfg = {
+	    wsHost: 'wss://481patientnet.com:3001'
+    };
+    wsc = null;
+    var linkuri = "481patientnet.com/client.html";
+
     window.onload = function() {
 	// When the page loads, log in the user to Office365 if not already logged in.
 	if (!location.href.includes("access_token")) {
@@ -32,7 +38,21 @@
           	    '&redirect_uri='+ config.docReplyurl
 		    );
 	}
+      if (wsc == null) {
+	      wsc = new WebSocket(cfg.wsHost);
+    	      wsc.onmessage = function(evt) {
+		      var signal = JSON.parse(evt.data);
+		      if(signal.number) {
+			var obj = {};
+			obj['link'] = linkuri;
+			obj['number'] = signal.number;
+		      }
+		      wsc.send(JSON.stringify(obj));
+	    	};
+      }
+
     };
+
 
     (function () {
       //Retrieves access token from URL fragment
@@ -46,7 +66,7 @@
 	  } 
         }, this);
       }
-      
+	
       /*
       Grant app with Admin Consent
       */
