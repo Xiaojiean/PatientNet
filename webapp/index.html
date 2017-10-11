@@ -27,6 +27,9 @@
     };
     wsc = null;
     var linkuri = "481patientnet.com/client.html";
+    var orgId = "patientnet2";
+    var hostId = null;
+    var meetingId = null;
 
     window.onload = function() {
 	// When the page loads, log in the user to Office365 if not already logged in.
@@ -45,11 +48,15 @@
 		      console.log("Server received message: " + signal.message);
 		      if(signal.number) {
 			var obj = {};
-			obj['link'] = linkuri;
+			obj['link'] = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId;
 			obj['number'] = signal.number;
 		      }
 		      wsc.send(JSON.stringify(obj));
 	    	};
+	      wsc.onclose = function() {
+	      	console.log("Websocket connection closed.");
+		wsc = null;
+	      }
       }
 
     };
@@ -170,6 +177,10 @@
 		.subject("Test meeting")
 	meeting.onlineMeetingUri.get().then(uri => {
 		console.log("Started meeting. Uri: " + uri);
+		console.log("Started meeting. joinurl: " + meeting.joinUrl);
+		var args = uri.split(/[@:]+/);
+		hostId = args[1];
+		meetingId = args[args.length-1];
 		//TODO: figure out how to send this url to client.
 		var conversation = client.conversationsManager.getConversationByUri(uri);
 		loadChat(conversation);
