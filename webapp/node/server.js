@@ -41,11 +41,15 @@ app.post('/api/v1/sendsms', function(req, res) {
 		res.status(500).send("No doctors connected");
 		return;
 	}
-	wsClients.forEach(function(cli) {
+	for(var i = wsClients.length - 1; i >= 0; i--) {
+		var cli = wsClients[i];
 		if(cli.readyState === cli.OPEN){
 			cli.send(JSON.stringify(obj));
+		} else {
+			cli.close();
+			wsClients.splice(i, 1);
 		}
-	});
+	}
 	res.status(200).send("OK");
 });
 
