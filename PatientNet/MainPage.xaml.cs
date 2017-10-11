@@ -209,7 +209,8 @@ namespace PatientNet
         private async void SendHTTP(string message, string endpoint, int type)
         {
             HttpClient httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
+            //httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
+            httpClient.BaseAddress = new Uri("https://481patientnet.com");
             string content_type = "application/json";
             string key = null;
             switch (type)
@@ -232,7 +233,8 @@ namespace PatientNet
                 var serialized = JsonConvert.SerializeObject(info);
                 HttpContent content = new StringContent(serialized, Encoding.UTF8, content_type);
                 System.Diagnostics.Debug.WriteLine("Sending " + info + " to " + endpoint);
-                HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
+                //HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
+                HttpResponseMessage response = await httpClient.PostAsync(httpClient.BaseAddress, content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -241,6 +243,7 @@ namespace PatientNet
                 else
                 {
                     ShowToast("SendHTTP()", "Unsuccessful");
+                    //ShowToast("Reason", response.ReasonPhrase);
                 }
             }
             catch (Exception ex)
