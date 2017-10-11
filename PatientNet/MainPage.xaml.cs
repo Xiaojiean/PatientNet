@@ -209,15 +209,16 @@ namespace PatientNet
         private async void SendHTTP(string message, string endpoint, int type)
         {
             HttpClient httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri("http://481patientnet.com");
-            string content_type = null;
+            httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
+            string content_type = "application/json";
+            string key = null;
             switch (type)
             { 
                 case 0:
-                    content_type = "application/phonenumber";
+                    key = "number";
                     break;
                 case 1:
-                    content_type = "application/skypename";
+                    key = "skypeid";
                     break;
                 default:
                     break;
@@ -227,9 +228,9 @@ namespace PatientNet
 
             try
             {
-                string info = @"{ 'number': '" + phoneNumber + "' }";
+                string info = @"{ '" + key + "': '" + phoneNumber + "' }";
                 var serialized = JsonConvert.SerializeObject(info);
-                HttpContent content = new StringContent(serialized, Encoding.UTF8, "application/json");
+                HttpContent content = new StringContent(serialized, Encoding.UTF8, content_type);
                 System.Diagnostics.Debug.WriteLine("Sending " + info + " to " + endpoint);
                 HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
 
