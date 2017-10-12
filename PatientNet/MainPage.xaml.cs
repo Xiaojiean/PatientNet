@@ -22,8 +22,6 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.ApplicationModel.Contacts;
-using Windows.Devices.Sms;
-//using Windows.Web.Http;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
@@ -44,7 +42,6 @@ namespace PatientNet
         bool _isPreviewing;
         DisplayRequest _displayRequest = new DisplayRequest();
         string phoneNumber = null;
-        private MainPage rootPage;
         string skypeName = null;
 
         public MainPage()
@@ -144,7 +141,6 @@ namespace PatientNet
             await CleanupCameraAsync();
         }
 
-        // Doesn't quite work
         private void PhoneDownHandler(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
@@ -153,51 +149,13 @@ namespace PatientNet
                 Call_Click(sender, e);
             }
         }
+
         private void SkypeNameDownHandler(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
                 skypeName = SkypeName.Text;
                 CallDoctor_Click(sender, e);
-            }
-        }
-
-        // Try to send sms - TODO: Don't know if I need this function
-        private async void ComposeSms(Windows.ApplicationModel.Contacts.Contact recipient, string messageBody,
-            StorageFile attachmentFile, string mimeType)
-        {
-            var chatMessage = new Windows.ApplicationModel.Chat.ChatMessage();
-            chatMessage.Body = messageBody;
-
-            if (attachmentFile != null)
-            {
-                var stream = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromFile(attachmentFile);
-
-                var attachment = new Windows.ApplicationModel.Chat.ChatMessageAttachment(
-                    mimeType,
-                    stream);
-
-                chatMessage.Attachments.Add(attachment);
-            }
-
-            var phone = recipient.Phones.FirstOrDefault<Windows.ApplicationModel.Contacts.ContactPhone>();
-            if (phone != null)
-            {
-                chatMessage.Recipients.Add(phone.Number);
-            }
-            await Windows.ApplicationModel.Chat.ChatMessageManager.ShowComposeSmsMessageAsync(chatMessage);
-        }
-
-        private async void SendSMS(Contact recipient, string message)
-        {
-            var chatMessage = new Windows.ApplicationModel.Chat.ChatMessage();
-            chatMessage.Body = message;
-
-            var phone = recipient.Phones.FirstOrDefault<Windows.ApplicationModel.Contacts.ContactPhone>();
-            if (phone != null)
-            {
-                chatMessage.Recipients.Add(phone.Number);
-                await Windows.ApplicationModel.Chat.ChatMessageManager.ShowComposeSmsMessageAsync(chatMessage);
             }
         }
 
@@ -210,7 +168,6 @@ namespace PatientNet
         {
             HttpClient httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
-            //httpClient.BaseAddress = new Uri("https://481patientnet.com");
             string content_type = "application/json";
             string key = null;
             switch (type)
@@ -229,11 +186,10 @@ namespace PatientNet
 
             try
             {
-                string info = $"{{ \"{key}\": \"{phoneNumber}\" }}";
+                string info = $"{{ \"{key}\": \"{message}\" }}";
                 var serialized = JsonConvert.SerializeObject(info);
                 HttpContent content = new StringContent(info, Encoding.UTF8, content_type);
                 System.Diagnostics.Debug.WriteLine("Sending " + info + " to " + endpoint);
-                //HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
                 HttpResponseMessage response = await httpClient.PostAsync(httpClient.BaseAddress + endpoint, content);
 
                 if (response.IsSuccessStatusCode)
@@ -243,8 +199,8 @@ namespace PatientNet
                 else
                 {
                     ShowToast("SendHTTP()", "Unsuccessful");
+                    //ShowToast("URL", httpClient.BaseAddress + endpoint);
                     //ShowToast("Reason", response.ReasonPhrase);
-                    ShowToast("URL", httpClient.BaseAddress + endpoint);
                 }
             }
             catch (Exception ex)
@@ -252,7 +208,6 @@ namespace PatientNet
                 ShowToast("Exception", ex.Message);
             }
         }
-
 
         private void Call_Click(object sender, RoutedEventArgs e)
         {
@@ -268,8 +223,6 @@ namespace PatientNet
             }
             else
             {
-                //phoneNumber = "1" + phoneNumber;
-                
                 try
                 {
                     string endpoint = @"api/v1/sendsms";

@@ -8,16 +8,49 @@
     mc:Ignorable="d">
 
     <Grid Background="MintCream">
+        <Image Source="Assets/PatientNet_Background.jpg" />
         <!-- Austin's Code for start and stop camera buttons
         <Button Content="Start Camera" HorizontalAlignment="Left" Margin="10,143,0,0" VerticalAlignment="Top" Click="StartButton_Click" Width="106"/>
         <Button Content="Stop Camera" HorizontalAlignment="Left" Margin="240,143,0,0" VerticalAlignment="Top" Click="StopButton_Click" RenderTransformOrigin="0.5,0.5" Width="106"/>
         -->
 
         <CaptureElement Name="PreviewControl" Stretch="Uniform" Margin="10,143,10,0"/>
-        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,30,0,0" IsDoubleTapEnabled="False" IsHoldingEnabled="False" IsRightTapEnabled="False" IsTapEnabled="False"  FontSize="36" FontFamily="Segoe UI Semibold"> <Bold> PatientNet </Bold></TextBlock>
-        <TextBox x:Name="Phone" Background="LightSkyBlue" Width="145" Header="Enter Phone Number" PlaceholderText="XXXXXXXXXX" InputScope="Number" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="-400,150,0,0" MaxLength="10" Height="62" KeyDown="PhoneDownHandler"/>
-        <Button x:Name="CallContact" Background="LightSkyBlue"  Content="Notify Emergency Contact" HorizontalAlignment="Center" Margin="-400,250,0,0" VerticalAlignment="Top" Width="200" Click="Call_Click"/>
-        <TextBox x:Name="SkypeName" Background="LightSkyBlue" Width="145" Header="Enter Skype Name" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="400,150,0,0" Height="62" KeyDown="SkypeNameDownHandler"/>
-        <Button x:Name="CallDoctors" Background="LightSkyBlue"  Content="Notify All Doctors" HorizontalAlignment="Center" Margin="400,250,0,0" VerticalAlignment="Top" Width="200" Click="CallDoctor_Click"/>
+        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,30,0,0" IsDoubleTapEnabled="False" IsHoldingEnabled="False" IsRightTapEnabled="False" IsTapEnabled="False" Foreground="SlateGray"  FontSize="36" FontFamily="Arial Rounded MT Bold"> <Bold> PatientNet </Bold></TextBlock>
+        <TextBox x:Name="Phone" Background="Transparent" Width="145" Header="Enter Phone Number" PlaceholderText="XXXXXXXXXX" InputScope="Number" HorizontalAlignment="Center" VerticalAlignment="Top" Foreground="SlateGray" Margin="-400,150,0,0" MaxLength="10" Height="62" KeyDown="PhoneDownHandler"/>
+        <TextBox x:Name="SkypeName" Background="Transparent" Width="145" Header="Enter Skype Name" PlaceholderText="e.g. skype.name" HorizontalAlignment="Center" VerticalAlignment="Top" Foreground="SlateGray" Margin="400,150,0,0" Height="62" KeyDown="SkypeNameDownHandler"/>
+
+        <!-- Button to notify Emergency Contact -->
+        <StackPanel>
+            <Button x:Name="CallContact" Background="Transparent"  HorizontalAlignment="Center" Margin="-400,240,0,0" VerticalAlignment="Top" Width="220" Click="Call_Click">
+                <StackPanel>
+                    <Border CornerRadius="9" 
+                    Background="LightSkyBlue" 
+                    Opacity="0.78"
+                    BorderBrush="SlateGray" 
+                    BorderThickness="1">
+                        <TextBlock Text="Notify Emergency Contact" 
+                           Margin="10,6.5" 
+                           Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
+                    </Border>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- Button to notify Doctors -->
+        <StackPanel>
+            <Button x:Name="CallDoctors" Background="Transparent" HorizontalAlignment="Center" Margin="400,240,0,0" VerticalAlignment="Top" Width="160" Click="CallDoctor_Click">
+                <StackPanel>
+                    <Border CornerRadius="9" 
+                    Background="LightSkyBlue" 
+                    Opacity="0.78"
+                    BorderBrush="SlateGray" 
+                    BorderThickness="1">
+                        <TextBlock Text="Notify All Doctors" 
+                           Margin="10,6.5" 
+                           Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
+                    </Border>
+                </StackPanel>
+            </Button>
+        </StackPanel>
     </Grid>
 </Page>
