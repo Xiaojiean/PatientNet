@@ -27,9 +27,11 @@
     };
     wsc = null;
     var linkuri = "481patientnet.com/client.html";
+    var shortLink = null;
     var orgId = "patientnet2";
     var hostId = null;
     var meetingId = null;
+    var googleApiKey = "AIzaSyBSb9EvtAm8Ntcj5-Rt4L-9gqMeJmMj7kA";
 
     window.onload = function() {
 	// When the page loads, log in the user to Office365 if not already logged in.
@@ -48,9 +50,10 @@
 		      console.log("Server received message: " + signal.message);
 		      if(signal.number) {
 			var obj = {};
-			obj['link'] = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId;
+			obj['link'] = shortLink;
 			obj['number'] = signal.number;
 		      }
+		      console.log("Shortlink: " + shortLink);
 		      wsc.send(JSON.stringify(obj));
 	    	};
 	      wsc.onclose = function() {
@@ -171,6 +174,22 @@
         });        
       };
 
+      /*
+	 Generate a short url with Google Url Shortener.
+      */
+      function shortenUrl(longUrl) {	
+	      var req = new XMLHttpRequest();
+	      req.open("POST", "https://www.googleapis.com/urlshortener/v1/url?key="+googleApiKey);
+	      req.setRequestHeader("Content-Type", "application/json");
+	      req.send(JSON.stringify({ "longUrl": longUrl }));
+	      req.onreadystatechange = function() {
+		      if(this.readyState == 4 && this.status == 200) {
+		      	console.log("Resp: " + req.responseText);
+			shortLink = JSON.parse(req.responseText).id;
+	      	      }
+	      }
+      }
+
       function scheduleMeeting() {
       	var meeting = client.conversationsManager.createMeeting()
 		.accessLevel("Everyone")
@@ -178,9 +197,12 @@
 	meeting.onlineMeetingUri.get().then(uri => {
 		console.log("Started meeting. Uri: " + uri);
 		console.log("Started meeting. joinurl: " + meeting.joinUrl);
+
 		var args = uri.split(/[@:]+/);
-		hostId = args[1];
-		meetingId = args[args.length-1];
+		var hostId = args[1];
+		var meetingId = args[args.length-1];
+		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId;
+		shortenUrl(longUrl);
 		//TODO: figure out how to send this url to client.
 		var conversation = client.conversationsManager.getConversationByUri(uri);
 		loadChat(conversation);
