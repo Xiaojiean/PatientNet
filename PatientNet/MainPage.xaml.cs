@@ -209,8 +209,8 @@ namespace PatientNet
         private async void SendHTTP(string message, string endpoint, int type)
         {
             HttpClient httpClient = new HttpClient();
-            //httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
-            httpClient.BaseAddress = new Uri("https://481patientnet.com");
+            httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
+            //httpClient.BaseAddress = new Uri("https://481patientnet.com");
             string content_type = "application/json";
             string key = null;
             switch (type)
@@ -229,12 +229,12 @@ namespace PatientNet
 
             try
             {
-                string info = @"{ '" + key + "': '" + phoneNumber + "' }";
+                string info = $"{{ \"{key}\": \"{phoneNumber}\" }}";
                 var serialized = JsonConvert.SerializeObject(info);
-                HttpContent content = new StringContent(serialized, Encoding.UTF8, content_type);
+                HttpContent content = new StringContent(info, Encoding.UTF8, content_type);
                 System.Diagnostics.Debug.WriteLine("Sending " + info + " to " + endpoint);
                 //HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
-                HttpResponseMessage response = await httpClient.PostAsync(httpClient.BaseAddress, content);
+                HttpResponseMessage response = await httpClient.PostAsync(httpClient.BaseAddress + endpoint, content);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -244,6 +244,7 @@ namespace PatientNet
                 {
                     ShowToast("SendHTTP()", "Unsuccessful");
                     //ShowToast("Reason", response.ReasonPhrase);
+                    ShowToast("URL", httpClient.BaseAddress + endpoint);
                 }
             }
             catch (Exception ex)
@@ -267,11 +268,11 @@ namespace PatientNet
             }
             else
             {
-                phoneNumber = "1" + phoneNumber;
+                //phoneNumber = "1" + phoneNumber;
                 
                 try
                 {
-                    string endpoint = @"/api/v1/sendsms";
+                    string endpoint = @"api/v1/sendsms";
                     SendHTTP(phoneNumber, endpoint, 0);
                 }
                 catch(Exception ex)
@@ -290,7 +291,7 @@ namespace PatientNet
             }
             try
             {
-                string endpoint = @"/api/v1/requestdoctor";
+                string endpoint = @"api/v1/requestdoctor";
                 SendHTTP(skypeName, endpoint, 1);
             }
             catch (Exception ex)
