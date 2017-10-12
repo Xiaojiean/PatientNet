@@ -12,13 +12,15 @@
   <script src="https://swx.cdn.skype.com/shared/v/1.2.15/SkypeBootstrap.min.js"></script><!--Skype Web SDK-->
 </head>
 <body>
-  <button id="AdminConsent">Admin Consent</button>
-  <button id="startChat">Start Chat</button>
-  <div id="SdKStatus"></div>
-  <div id="SigninStatus"></div>
-  <div id="conversationWindow"></div>
-  <div id="conversationContainer"></div>
-  
+  <div class="topnav">
+	  <h1>PatientNet</h1>
+  </div>
+  <div id="body">
+  	<div id="SigninStatus"></div>
+  	<div id="conversationWindow"></div>
+  	<div id="conversationContainer"></div>
+	<div id="loader"</div>
+  </div>  
   <script type="text/javascript">
     var apiManager = null;
     var client = null;
@@ -80,7 +82,7 @@
 	
       /*
       Grant app with Admin Consent
-      */
+      *//*
       document.getElementById('AdminConsent').onclick= function(){
         location.assign('https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token'+
           '&client_id='+config.clientid+
@@ -90,7 +92,7 @@
           '&resource='+config.resource+
           '&prompt=admin_consent'
         );
-      };
+      };*/
            
       /*
       Initializing Skype Web SDK & Conversation Control.
@@ -100,7 +102,6 @@
           Skype.initialize({apiKey:config.apiKeyCC},function(api){
               apiManager = api;
               client = api.UIApplicationInstance;
-              document.getElementById('SdKStatus').innerHTML = 'Skype Web SDK & Conversation Control Initialize success!';
 	      _loginCallback();
 
               //Event handler: whenever app state changes, display its value
@@ -227,7 +228,12 @@
         })
 	promise.then(function(conversation) {
 		//Rendered successfully
+		//Remove loader.
+		document.getElementById("loader").style.display = "none";
+
 		conversation.chatService.start();
+		//conversation.audioService.start();
+		//conversation.videoService.start();
 	}, function(error) {
 		console.log("Error: " + error);
 	});
