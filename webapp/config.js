@@ -1,6 +1,6 @@
 /*
  * Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT license.
- * See LICENSE in the project root for license information.
+ * Borrowed from https://github.com/OfficeDev/skype-web-sdk-simple-sample-for-SfB-online
  */
 
 var config = {

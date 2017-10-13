@@ -1,5 +1,7 @@
 #!/usr/bin/env nodejs
 
+//Followed example in https://github.com/dimircea/WebRTC/blob/master/SimpleVideoChat/server.js
+
 const WebSocketServer = require('ws').Server,
 	express	 = require('express'),
 	bodyParser = require('body-parser'),
