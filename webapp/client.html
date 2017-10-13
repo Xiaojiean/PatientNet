@@ -28,7 +28,8 @@
     	client = null,
     	org = null,
 	hostId = null,
-	meetingId = null;
+	meetingId = null,
+	contact = "Emergency Contact";
 
     window.onload = function() {
 	console.log("URL BEFORE LOAD", window.location.href);  
@@ -42,6 +43,7 @@
 		    );*/
 	}
 	console.log("URL arguments:", window.location.search.substring(1));
+	contact = prompt("Please enter your name", "Emergency Contact");
     };
 
     (function () {
@@ -165,7 +167,7 @@
 	      success: function(response) {
 		var res = JSON.parse(response);
       		var params = {
-		      	name: 'Emergency Contact',
+		      	name: contact,
 			cors: true,
 			root: { user: res.DiscoverUri },
 			token: "Bearer " + res.Token
