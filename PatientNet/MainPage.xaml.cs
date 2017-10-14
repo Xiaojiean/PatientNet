@@ -28,6 +28,7 @@ using Newtonsoft.Json;
 using System.Text;
 using Windows.Data.Xml.Dom;
 using Windows.UI.Notifications;
+using System.Text.RegularExpressions;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -146,7 +147,7 @@ namespace PatientNet
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
                 phoneNumber = Phone.Text;
-                Call_Click(sender, e);
+                Phone_Click(sender, e);
             }
         }
 
@@ -171,7 +172,7 @@ namespace PatientNet
             string content_type = "application/json";
             string key = null;
             switch (type)
-            { 
+            {
                 case 0:
                     key = "number";
                     break;
@@ -194,7 +195,8 @@ namespace PatientNet
 
                 if (response.IsSuccessStatusCode)
                 {
-                    ShowToast("SendHTTP()", "Successful");
+                    //ShowToast("SendHTTP()", "Successful");
+                    ShowToast("SendHTTP()", message);
                 }
                 else
                 {
@@ -209,30 +211,32 @@ namespace PatientNet
             }
         }
 
-        private void Call_Click(object sender, RoutedEventArgs e)
+        private void Phone_Click(object sender, RoutedEventArgs e)
         {
             if (phoneNumber == null)
             {
                 phoneNumber = Phone.Text;
             }
 
-            if (phoneNumber.Length < 10)
+            if (phoneNumber.Length != 13)
             {
-                ShowToast("title", "Invalid Number");
+                ShowToast("Invalid Number", phoneNumber);
                 phoneNumber = null;
             }
             else
             {
                 try
                 {
+                    string parsedPhoneNumber = string.Format("{0}{1}{2}", phoneNumber.Substring(1, 3),
+                        phoneNumber.Substring(5, 3), phoneNumber.Substring(9, 4));
                     string endpoint = @"api/v1/sendsms";
-                    SendHTTP(phoneNumber, endpoint, 0);
+                    SendHTTP(parsedPhoneNumber, endpoint, 0);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    ShowToast("Call_Click()", ex.Message);
+                    ShowToast("Phone_Click()", ex.Message);
                     return;
-                }                
+                }
             }
         }
 
@@ -254,6 +258,48 @@ namespace PatientNet
             }
         }
 
+        private string PhoneNumberFormatter(string value)
+        {
+            value = new Regex(@"\D").Replace(value, string.Empty);
+            if (value.Length > 0 & value.Length < 4)
+            {
+                value = string.Format("({0}", value.Substring(0, value.Length));
+                return value;
+            }
+            if (value.Length > 3 & value.Length < 7)
+            {
+                value = string.Format("({0}){1}", value.Substring(0, 3), value.Substring(3, value.Length - 3));
+                return value;
+            }
+            if (value.Length > 6 & value.Length < 11)
+            {
+                value = string.Format("({0}){1}-{2}", value.Substring(0, 3), value.Substring(3, 3), value.Substring(6));
+                return value;
+            }
+
+            if (value.Length > 10)
+            {
+                value = value.Remove(value.Length - 1, 1);
+                value = string.Format("({0}){1}-{2}", value.Substring(0, 3), value.Substring(3, 3), value.Substring(6));
+                return value;
+            }
+
+            return value;
+        }
+
+        private void Phone_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            string number = textBox.Text;
+            textBox.Text = PhoneNumberFormatter(number);
+
+            // This gets kinda bad when the user tries to insert or delete from the middle
+            if (textBox.Text.Length != 0)
+            {
+                textBox.SelectionStart = textBox.Text.Length;
+            }
+        }
+
         private static void ShowToast(string title, string content)
         {
             XmlDocument toastXml = new XmlDocument();
@@ -270,5 +316,6 @@ namespace PatientNet
             ToastNotification toast = new ToastNotification(toastXml);
             ToastNotificationManager.CreateToastNotifier().Show(toast);
         }
+
     }
 }
