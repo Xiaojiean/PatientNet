@@ -4,7 +4,7 @@
  */
 
 #conversationWindow{
-    width: 700px;
+    width: 80%;
     height: 500px;/*need height property for showing chat log in Conversation Controll*/
 }
 

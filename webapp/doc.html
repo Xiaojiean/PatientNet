@@ -17,12 +17,15 @@
   </div>
   <div id="body">
   	<div id="SigninStatus"></div>
+  	<div id="SigninEmt"></div>
 	<div id="loader"></div>
   	<div id="conversationWindow"></div>
   </div>  
   <script type="text/javascript">
     var apiManager = null;
     var token = null;
+    var emtSip = null;
+    var emtClient = null;
     var contactClient = null;
     var cfg = {
 	    wsHost: 'wss://481patientnet.com:3001'
@@ -57,7 +60,8 @@
 		        wsc.send(JSON.stringify(obj));
 		      } else if (signal.type == 'request') {
 			      if(confirm("Would you want to accept a request from EMT with id: " + signal.skypeid + "?")) {
-				window.open("https://481patientnet.com/doc.html?" + signal.skypeid + "#access_token=" + token, "_blank"); 
+				//createConversation("sip:wmcayo@patientnet2.onmicrosoft.com");
+				window.open("https://481patientnet.com/index.html?" + signal.skypeid + "#access_token=" + token, "_blank"); 
 			      }
 		      }
 	    	};
@@ -67,8 +71,13 @@
 	      }
       }
 
+      console.log("uri: " + window.location.search.substring(1));
       //Retrieves access token from URL fragment
-      if(location.hash) {
+      if(window.location.search.substring(1).includes('sip')){
+	emtSip = window.location.search.substring(1);
+	skypeInit(skypeLogin);
+      }
+      else if(location.hash) {
         var hasharr = location.hash.substr(1).split("&");
         hasharr.forEach(function(hashelem) {
           var elemarr = hashelem.split("=");
@@ -104,7 +113,7 @@
               client.conversationsManager.conversations.added(function(conversation){
              
                 //Event handler : Get notified when conversation control receives an incoming call
-                /*conversation.selfParticipant.audio.state.changed(function (newValue, reason, oldValue) {
+                conversation.selfParticipant.audio.state.changed(function (newValue, reason, oldValue) {
                   // 'Notified' indicates that there is an incoming call
                   if(newValue === 'Notified') {
                     var person = conversation.participants(0).person;;
@@ -120,10 +129,10 @@
                         }, 0);
                     } else {
                         // Reject the incoming call
-                        //conversation.audioService.reject();
+                        conversation.audioService.reject();
                     }
                   }
-		});*/
+		});
 	      });
       
       }
@@ -159,7 +168,8 @@
         contactClient.signInManager.signIn(params).then(function(){
           document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + contactClient.personsAndGroupsManager.mePerson.displayName();
 	  //loadChat();
-	  scheduleMeeting();
+	  //scheduleMeeting();
+	  createConversation("sip:wmcayo@patientnet2.onmicrosoft.com");
         },function(error){
           console.log(error);
         });        
@@ -198,11 +208,24 @@
 		var meetingId = args[args.length-1];
 		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId;
 		shortenUrl(longUrl);
+		//TODO: figure out how to send this url to client.
 		var conversation = contactClient.conversationsManager.getConversationByUri(uri);
 		loadChat(conversation, null, "conversationWindow");
 	}); 
       }
- 
+
+      /*
+	 createConversation creates a 1:1 Conversation with the sip user.
+	 It then renders the conversationsManager with the meeting.
+      */
+      function createConversation(sip){
+      	var conversation = contactClient.conversationsManager.createConversation();
+	//var emt = conversation.createParticipant(sip);
+	//conversation.participants.add(emt);
+	console.log("sip: " + sip);
+	loadChat(null, sip, "conversationContainer");
+      }
+      
       /*
       Render conversation control on outgoing call
       */
@@ -212,8 +235,8 @@
 	if(!conversation) {
 		uris = [sip];
 	}
-        //var container = document.createElement('convos');
-        //document.getElementById(contain).appendChild(container);
+	//var container = document.createElement('div');
+	//document.getElementById('conversationContainer').appendChild(container);
 	var container = document.createElement('div');
 	document.getElementById('conversationWindow').appendChild(container);
 	
@@ -235,7 +258,36 @@
 	}, function(error) {
 		console.log("Error: " + error);
 	});
+	/*
+	var newDiv = document.createElement('div');
+	var control = document.getElementById('conversationContainer');
+	control.appendChild(newDiv);
+	
+        apiManager.renderConversation(newDiv,{
+          //Start outgoing call with chat window
+          modalities:['Chat'],
+          participants: uris
+	}).then(function(conversation) {
+		//Rendered successfully
+		conversation.chatService.start();
+	}, function(error) {
+		console.log("Error: " + error);
+	});
+	*/
+
       };
+
+      function showContacts() {
+	var tagContactList = createGroupView(client.personsAndGroupsManager.all.persons, 'Contact List');
+	//var control = document.getElementById('conversationContainer');
+	//control.appendChild(tagName);
+      };
+      
+      function createGroupView(contacts, title) {
+      	//var tagName = document.createElement('div');
+	//tagname.className += " group-name";
+      	console.log(contacts);
+      }
     }());
   </script>
 </body>
