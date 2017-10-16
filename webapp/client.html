@@ -14,7 +14,7 @@
 </head>
 <body>
   <div class="topnav">
-	  <h1>PatientNet</h1>
+	  <h1>PatientNet Site</h1>
   </div>
   <div id="body">
   	<div id="SigninStatus"></div>
@@ -173,8 +173,8 @@
 			token: "Bearer " + res.Token
 	        };
         	client.signInManager.signIn(params).then(function(){
-          		document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + client.personsAndGroupsManager.mePerson.displayName();
 	  		var conversation = client.conversationsManager.conversations(0);
+          		document.getElementById('SigninStatus').innerHTML = 'Hello ' + client.personsAndGroupsManager.mePerson.displayName() + '. You have been connected with a doctor. Feel free to call the doctor, but note that only audio calls are supported.';
 	  		loadChat(conversation);
 			},function(error){
 	  			console.log("Error signing in: " + error);
@@ -188,7 +188,7 @@
 
       /*
       Sign-in Skype
-      */
+      *//*
       function skypeLogin(){
         var params =
         {
@@ -208,7 +208,7 @@
           console.log(error);
         });
       };
-
+*/
       /*
       Render conversation control on outgoing call
       */
