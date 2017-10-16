@@ -35,10 +35,26 @@ app.use(function(req, res, next) {
 });
 
 app.post('/api/v1/sendsms', function(req, res) {
-	console.log('Received: ' + req.body.number);
+	console.log('/api/v1/sendsms received: ' + JSON.stringify(req.body));
 	var obj = {};
+	obj['type'] = 'sms';
 	obj['number'] = req.body.number;
 	obj['message'] = JSON.stringify(req.body);
+	sendMessage(obj);
+	res.status(200).send("OK");
+});
+
+app.post('/api/v1/requestdoctor', function(req, res) {
+	console.log('/api/v1/requestdoctor received: ' + JSON.stringify(req.body));
+	var obj = {};
+	obj['type'] = 'request';
+	obj['skypeid'] = req.body.skypeid;
+	obj['message'] = JSON.stringify(req.body);
+	sendMessage(obj);
+	res.status(200).send("OK");
+});
+
+function sendMessage(obj){
 	if(wsClients.length == 0) {
 		res.status(500).send("No doctors connected");
 		return;
@@ -52,9 +68,7 @@ app.post('/api/v1/sendsms', function(req, res) {
 			wsClients.splice(i, 1);
 		}
 	}
-	res.status(200).send("OK");
-});
-
+}
 
 var server = http.createServer({key:pKey, cert:pCert}, app).listen(3001, function(){
 	console.log("server running at https://localhost:3001");
