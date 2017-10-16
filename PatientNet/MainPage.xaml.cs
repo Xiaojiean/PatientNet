@@ -45,6 +45,11 @@ namespace PatientNet
         string phoneNumber = null;
         string skypeName = null;
 
+        enum MessageType
+        {
+            Number, Skype
+        };
+
         public MainPage()
         {
             this.InitializeComponent();
@@ -165,7 +170,7 @@ namespace PatientNet
          *  - 0: phone number
          *  - 1: skype name
          */
-        private async void SendHTTP(string message, string endpoint, int type)
+        private async void SendHTTP(string message, string endpoint, MessageType type)
         {
             HttpClient httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
@@ -173,10 +178,10 @@ namespace PatientNet
             string key = null;
             switch (type)
             {
-                case 0:
+                case MessageType.Number:
                     key = "number";
                     break;
-                case 1:
+                case MessageType.Skype:
                     key = "skypeid";
                     break;
                 default:
@@ -230,7 +235,7 @@ namespace PatientNet
                     string parsedPhoneNumber = string.Format("{0}{1}{2}", phoneNumber.Substring(1, 3),
                         phoneNumber.Substring(5, 3), phoneNumber.Substring(9, 4));
                     string endpoint = @"api/v1/sendsms";
-                    SendHTTP(parsedPhoneNumber, endpoint, 0);
+                    SendHTTP(parsedPhoneNumber, endpoint, MessageType.Number);
                 }
                 catch (Exception ex)
                 {
@@ -249,7 +254,7 @@ namespace PatientNet
             try
             {
                 string endpoint = @"api/v1/requestdoctor";
-                SendHTTP(skypeName, endpoint, 1);
+                SendHTTP(skypeName, endpoint, MessageType.Skype);
             }
             catch (Exception ex)
             {
