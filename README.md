@@ -29,9 +29,10 @@ A meeting will be generated so the emergency contact can join.
   * Only audio calls are supported with the emergency contact
 
 * Wait for notification from EMT
-  * Note: You will need a <i>personal</i> Skype account and the [Skype Desktop app](https://www.skype.com/en/download-skype/skype-for-computer/)
-  * A Skype "Call" button will be created and clicking it will automatically call the EMT.
+  * Note: You will need a <i>personal</i> Skype account and the classic [Skype Desktop app](https://www.skype.com/en/download-skype/skype-for-computer/) (the built-in Windows 10 Skype app doesn't support Hololens drawing)
+  * A Skype "Call" button will be created and clicking it will automatically call the EMT
   * Both video and audio are supported for this call
+    * If the EMT's video is blank, please follow instructions [here](https://forums.hololens.com/discussion/2343/hololens-add-in-is-causing-black-screen) to remedy
 
 # To run web application as emergency contact
 * Go to the link texted to you
