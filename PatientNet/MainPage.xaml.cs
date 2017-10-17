@@ -1,8 +1,16 @@
 ﻿namespace PatientNet
 {
+    /**
+     *  TODO:
+     *      1) Add summaries
+     *      2) Organize member functions
+     *      3) Improve UI
+     * 
+     */
+
+
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Threading.Tasks;
     using Windows.ApplicationModel;
     using Windows.Graphics.Display;
@@ -30,13 +38,14 @@
         DisplayRequest _displayRequest = new DisplayRequest();
 
         private const int FormattedPhoneLength = 13;
+        private const int SendSleepTimeInMilliseconds = 5000;
 
+        private Logger logger = new Logger();
         private HashSet<string> numbersSentTo = new HashSet<string>();
-        private string phoneNumber = null;
-        private string skypeName = null;
+        private HashSet<string> skypesSentTo = new HashSet<string>();
 
-        private delegate void PhoneClickedEventHandler(object sender, PhoneClickEventArgs e);
-        private event PhoneClickedEventHandler PhoneClicked;  // Invoke on phone click
+        private delegate void SendRequestEventHandler(object sender, RequestEventArgs e);
+        private event SendRequestEventHandler SentRequest;  // Invoke on phone click
 
         enum MessageType
         {
@@ -46,7 +55,7 @@
         public MainPage()
         {
             this.InitializeComponent();
-            PhoneClicked += OnPhoneClicked;
+            this.SentRequest += this.OnRequestSent;
             Application.Current.Suspending += Application_Suspending;
         }
 
@@ -81,7 +90,7 @@
             catch (UnauthorizedAccessException)
             {
                 // This will be thrown if the user denied access to the camera in privacy settings
-                Debug.WriteLine("The app was denied access to the camera");
+                this.logger.Log("The app was denied access to the camera");
                 return;
             }
 
@@ -102,7 +111,7 @@
         {
             if (args.Status == MediaCaptureDeviceExclusiveControlStatus.SharedReadOnlyAvailable)
             {
-                Debug.WriteLine("The camera preview can't be displayed because another app has exclusive access");
+                this.logger.Log("The camera preview can't be displayed because another app has exclusive access");
             }
             else if (args.Status == MediaCaptureDeviceExclusiveControlStatus.ExclusiveControlAvailable && !_isPreviewing)
             {
@@ -150,7 +159,6 @@
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                phoneNumber = Phone.Text;
                 PhoneClick(sender, e);
             }
         }
@@ -159,18 +167,25 @@
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                skypeName = SkypeName.Text;
                 CallDoctorClick(sender, e);
             }
         }
 
-        /* Used to send phone numbers and skype names
-         * type: 
-         *  - 0: phone number
-         *  - 1: skype name
-         */
+        /// <summary>
+        /// Used to send phone numbers and skype names
+        /// </summary>
         private async void SendHTTP(string message, string endpoint, MessageType type)
         {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (string.IsNullOrWhiteSpace(endpoint))
+            {
+                throw new ArgumentNullException(nameof(endpoint));
+            }
+
             HttpClient httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
             string content_type = "application/json";
@@ -202,7 +217,8 @@
                 string info = $"{{ \"{key}\": \"{message}\" }}";
                 var serialized = JsonConvert.SerializeObject(info);
                 HttpContent content = new StringContent(info, Encoding.UTF8, content_type);
-                System.Diagnostics.Debug.WriteLine("Sending " + info + " to " + endpoint);
+                this.logger.Log("Sending " + info + " to " + endpoint);
+
                 HttpResponseMessage response = await httpClient.PostAsync(httpClient.BaseAddress + endpoint, content);
 
                 if (response.IsSuccessStatusCode)
@@ -216,34 +232,44 @@
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Exception: {ex.Message}");
+                this.logger.Log($"Exception: {ex.Message}");
             }
         }
-        
+
+        private async void OnRequestSent(object sender, RequestEventArgs e)
+        {
+            e.Set.Add(e.Content);
+
+            await Task.Delay(MainPage.SendSleepTimeInMilliseconds);  // Disallow sending again for 5 seconds
+
+            e.Set.Remove(e.Content);
+            this.logger.Log($"Removed {e.Content} from {nameof(e.Set)}");
+        }
+
         private void PhoneClick(object sender, RoutedEventArgs e)
         {
-            phoneNumber = Phone.Text;
+            string phoneNumber = Phone.Text;
 
             if (string.IsNullOrWhiteSpace(phoneNumber))
             {
-                System.Diagnostics.Debug.WriteLine($"Got null or empty phone number. Skipping.");
+                this.logger.Log($"Got null or empty phone number. Skipping.");
                 return;
             }
-            else if (phoneNumber.Length != FormattedPhoneLength)
+            else if (phoneNumber.Length != MainPage.FormattedPhoneLength)
             {
                 ShowToast("Invalid Number", phoneNumber);
                 return;
             }
 
-            if (numbersSentTo.Contains(phoneNumber))
+            if (this.numbersSentTo.Contains(phoneNumber))
             {
-                System.Diagnostics.Debug.WriteLine($"Recently sent to {phoneNumber}. Skipping.");
+                this.logger.Log($"Recently sent to {phoneNumber}. Skipping.");
                 return;  // Don't do anything
             }
 
             // Add phone number to set of numbers
-            System.Diagnostics.Debug.WriteLine($"Adding {phoneNumber} to sent numbers");
-            PhoneClicked.Invoke(this, new PhoneClickEventArgs(phoneNumber));
+            this.logger.Log($"Adding {phoneNumber} to {this.numbersSentTo}");
+            SentRequest.Invoke(this, new RequestEventArgs(this.numbersSentTo, phoneNumber));
 
             try
             {
@@ -258,32 +284,38 @@
             }
         }
 
-        private async void OnPhoneClicked(object sender, PhoneClickEventArgs e)
-        {
-            numbersSentTo.Add(e.Number);
-
-            await Task.Delay(5000);
-
-            numbersSentTo.Remove(e.Number);
-            System.Diagnostics.Debug.WriteLine($"Removed {phoneNumber} from sent numbers");
-        }
-
         private void CallDoctorClick(object sender, RoutedEventArgs e)
         {
-            skypeName = SkypeName.Text;
+            string skypeName = SkypeName.Text;
 
             if (string.IsNullOrWhiteSpace(skypeName))
             {
-                System.Diagnostics.Debug.WriteLine($"Got null or empty phone number. Skipping.");
+                this.logger.Log($"Got null or empty phone number. Skipping.");
                 return;
             }
 
+            if (this.skypesSentTo.Contains(skypeName))
+            {
+                this.logger.Log($"Recently sent to {skypeName}. Skipping.");
+                return;  // Don't do anything
+            }
+
+            // Add skype name to set of skypes
+            this.logger.Log($"Adding {skypeName} to {nameof(this.skypesSentTo)}");
+            SentRequest.Invoke(this, new RequestEventArgs(this.skypesSentTo, skypeName));
+
             try
             {
-                // Append with "sip:"
-                if (!skypeName.StartsWith("sip:"))
+                const string skypeNamePrefix = "sip:";
+                const string skypeNameSuffix = "@skypeids.net";
+
+                if (!skypeName.StartsWith(skypeNamePrefix))
                 {
-                    skypeName = "sip:" + skypeName;
+                    skypeName = skypeNamePrefix + skypeName;
+                }
+                if (!skypeName.EndsWith(skypeNameSuffix))
+                {
+                    skypeName += skypeNameSuffix;
                 }
 
                 string endpoint = @"api/v1/requestdoctor";
