@@ -1,27 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.Graphics.Display;
 using Windows.Media.Capture;
-using Windows.Media.Core;
-using Windows.Storage;
 using Windows.System.Display;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
-using Windows.ApplicationModel.Contacts;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
@@ -29,6 +17,7 @@ using System.Text;
 using Windows.Data.Xml.Dom;
 using Windows.UI.Notifications;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -42,8 +31,13 @@ namespace PatientNet
         MediaCapture _mediaCapture;
         bool _isPreviewing;
         DisplayRequest _displayRequest = new DisplayRequest();
-        string phoneNumber = null;
-        string skypeName = null;
+
+        private HashSet<string> numbersSentTo = new HashSet<string>();
+        private string phoneNumber = null;
+        private string skypeName = null;
+
+        private delegate void PhoneClickedEventHandler(object sender, PhoneClickEventArgs e);
+        private event PhoneClickedEventHandler PhoneClicked;
 
         enum MessageType
         {
@@ -53,7 +47,7 @@ namespace PatientNet
         public MainPage()
         {
             this.InitializeComponent();
-
+            PhoneClicked += OnPhoneClicked;
             Application.Current.Suspending += Application_Suspending;
         }
 
@@ -152,7 +146,7 @@ namespace PatientNet
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
                 phoneNumber = Phone.Text;
-                Phone_Click(sender, e);
+                PhoneClick(sender, e);
             }
         }
 
@@ -161,7 +155,7 @@ namespace PatientNet
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
                 skypeName = SkypeName.Text;
-                CallDoctor_Click(sender, e);
+                CallDoctorClick(sender, e);
             }
         }
 
@@ -175,18 +169,26 @@ namespace PatientNet
             HttpClient httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
             string content_type = "application/json";
-            string key = null;
+            string key = null;              // Key to send to API
+            string title = null;            // Title of popup
+            string success_message = null;  // Message to print on success
+
             switch (type)
             {
                 case MessageType.Number:
                     key = "number";
+                    title = "Notify Emergency Contact";
+                    success_message = $"Successfully sent SMS to {message}.";
                     break;
                 case MessageType.Skype:
                     key = "skypeid";
+                    title = "Notify All Doctors";
+                    success_message = "Successfully notified doctors! A doctor will initiate a Skype call soon.";
                     break;
                 default:
-                    break;
+                    throw new ArgumentException("Invalid message type.");
             }
+
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(content_type));
             httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
 
@@ -200,14 +202,11 @@ namespace PatientNet
 
                 if (response.IsSuccessStatusCode)
                 {
-                    //ShowToast("SendHTTP()", "Successful");
-                    ShowToast("SendHTTP()", message);
+                    ShowToast(title, success_message);
                 }
                 else
                 {
-                    ShowToast("SendHTTP()", "Unsuccessful");
-                    //ShowToast("URL", httpClient.BaseAddress + endpoint);
-                    //ShowToast("Reason", response.ReasonPhrase);
+                    ShowToast(title, "Unsuccessful");
                 }
             }
             catch (Exception ex)
@@ -215,9 +214,20 @@ namespace PatientNet
                 ShowToast("Exception", ex.Message);
             }
         }
-
-        private void Phone_Click(object sender, RoutedEventArgs e)
+        
+        private void PhoneClick(object sender, RoutedEventArgs e)
         {
+            // CallContact.Click -= PhoneClick;  // TODO: Account for double-click
+
+            if (numbersSentTo.Contains(phoneNumber))
+            {
+                return;  // Don't do anything
+            }
+
+            // Add phone number to set of numbers
+            System.Diagnostics.Debug.WriteLine($"Adding {phoneNumber} to sent numbers");
+            PhoneClicked.Invoke(this, new PhoneClickEventArgs(phoneNumber));
+
             if (phoneNumber == null)
             {
                 phoneNumber = Phone.Text;
@@ -239,13 +249,22 @@ namespace PatientNet
                 }
                 catch (Exception ex)
                 {
-                    ShowToast("Phone_Click()", ex.Message);
-                    return;
+                    ShowToast("PhoneClick()", ex.Message);
                 }
             }
         }
 
-        private void CallDoctor_Click(object sender, RoutedEventArgs e)
+        private async void OnPhoneClicked(object sender, PhoneClickEventArgs e)
+        {
+            numbersSentTo.Add(e.Number);
+
+            await Task.Delay(5000);
+
+            numbersSentTo.Remove(e.Number);
+            System.Diagnostics.Debug.WriteLine($"Removed {phoneNumber} from sent numbers");
+        }
+
+        private void CallDoctorClick(object sender, RoutedEventArgs e)
         {
             if (skypeName == null)
             {
@@ -258,7 +277,7 @@ namespace PatientNet
             }
             catch (Exception ex)
             {
-                ShowToast("CallDoctor_Click()", ex.Message);
+                ShowToast("CallDoctorClick()", ex.Message);
                 return;
             }
         }

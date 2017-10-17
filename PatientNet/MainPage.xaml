@@ -64,7 +64,7 @@
 
         <!-- Button to notify Emergency Contact -->
         <StackPanel>
-            <Button x:Name="CallContact" Background="Transparent"  HorizontalAlignment="Center" Margin="-400,240,0,0" VerticalAlignment="Top" Width="220" Click="Phone_Click">
+            <Button x:Name="CallContact" Background="Transparent"  HorizontalAlignment="Center" Margin="-400,240,0,0" VerticalAlignment="Top" Width="220" Click="PhoneClick" >
                 <StackPanel>
                     <Border CornerRadius="9" 
                     Background="LightSkyBlue" 
@@ -81,7 +81,7 @@
 
         <!-- Button to notify Doctors -->
         <StackPanel>
-            <Button x:Name="CallDoctors" Background="Transparent" HorizontalAlignment="Center" Margin="400,240,0,0" VerticalAlignment="Top" Width="160" Click="CallDoctor_Click">
+            <Button x:Name="CallDoctors" Background="Transparent" HorizontalAlignment="Center" Margin="400,240,0,0" VerticalAlignment="Top" Width="160" Click="CallDoctorClick">
                 <StackPanel>
                     <Border CornerRadius="9" 
                     Background="LightSkyBlue" 
