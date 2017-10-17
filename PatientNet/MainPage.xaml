@@ -62,6 +62,18 @@
             KeyDown="SkypeNameDownHandler"
         />
 
+        <!-- Textbox for Notifications on Phone Number -->
+        <TextBox 
+            x:Name="UserNotifications" 
+            Background="Transparent" 
+            Width="500"  
+            HorizontalAlignment="Center" 
+            VerticalAlignment="Center" 
+            Foreground="Transparent" 
+            Margin="0,225,0,0" 
+            Height="65" IsDoubleTapEnabled="False" IsHoldingEnabled="False" IsRightTapEnabled="False" 
+        />
+
         <!-- Button to notify Emergency Contact -->
         <StackPanel>
             <Button x:Name="CallContact" Background="Transparent"  HorizontalAlignment="Center" Margin="-400,240,0,0" VerticalAlignment="Top" Width="220" Click="PhoneClick" >
