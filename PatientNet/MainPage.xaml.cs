@@ -1,28 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using Windows.ApplicationModel;
-using Windows.Graphics.Display;
-using Windows.Media.Capture;
-using Windows.System.Display;
-using Windows.UI.Core;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Input;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using Newtonsoft.Json;
-using System.Text;
-using Windows.Data.Xml.Dom;
-using Windows.UI.Notifications;
-using System.Text.RegularExpressions;
-using System.Threading;
-
-// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
-
-namespace PatientNet
+﻿namespace PatientNet
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Threading.Tasks;
+    using Windows.ApplicationModel;
+    using Windows.Graphics.Display;
+    using Windows.Media.Capture;
+    using Windows.System.Display;
+    using Windows.UI.Core;
+    using Windows.UI.Xaml;
+    using Windows.UI.Xaml.Controls;
+    using Windows.UI.Xaml.Input;
+    using System.Net.Http;
+    using System.Net.Http.Headers;
+    using Newtonsoft.Json;
+    using System.Text;
+    using Windows.Data.Xml.Dom;
+    using Windows.UI.Notifications;
+    using System.Text.RegularExpressions;
+
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
@@ -37,7 +34,7 @@ namespace PatientNet
         private string skypeName = null;
 
         private delegate void PhoneClickedEventHandler(object sender, PhoneClickEventArgs e);
-        private event PhoneClickedEventHandler PhoneClicked;
+        private event PhoneClickedEventHandler PhoneClicked;  // Invoke on phone click
 
         enum MessageType
         {
@@ -51,6 +48,9 @@ namespace PatientNet
             Application.Current.Suspending += Application_Suspending;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         private async void Application_Suspending(object sender, SuspendingEventArgs e)
         {
             // Handle global application events only if this page is active
@@ -62,6 +62,9 @@ namespace PatientNet
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         private async Task StartPreviewAsync()
         {
             try

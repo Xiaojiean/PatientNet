@@ -1,11 +1,14 @@
-﻿using System;
-
-public class PhoneClickEventArgs : EventArgs
+﻿namespace PatientNet
 {
-    public PhoneClickEventArgs(string number_)
-    {
-        Number = number_;
-    }
+    using System;
 
-    public string Number { get; }
+    public class PhoneClickEventArgs : EventArgs
+    {
+        public PhoneClickEventArgs(string number_)
+        {
+            Number = number_;
+        }
+
+        public string Number { get; }
+    }
 }
