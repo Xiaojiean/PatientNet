@@ -384,17 +384,17 @@
 
         private void Phone_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            UserHelp.Text = "";
+            UserHelp.Text = "Notify Emergency Contact sends a text to the specified number containing a link to the emergency contact PatientNet portal.";
         }
 
         private void SkypeName_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            UserHelp.Text = "";
+            UserHelp.Text = "Notify All Doctors sends a notification to all available doctors. The doctors will video call you via the provided Skype name.";
         }
 
         private void Help_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-
+            UserHelp.Text = string.Empty;
         }
     }
 }
