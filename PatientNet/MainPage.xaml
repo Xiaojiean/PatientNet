@@ -45,7 +45,7 @@
             MaxLength="13" 
             Height="62"          
             KeyDown="PhoneDownHandler"
-            TextChanged="Phone_TextChanged"/>
+            TextChanged="PhoneTextChanged"/>
         
         <!-- Textbox to enter EMT's skype name -->
         <TextBox 

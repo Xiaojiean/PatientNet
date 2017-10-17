@@ -29,6 +29,8 @@
         bool _isPreviewing;
         DisplayRequest _displayRequest = new DisplayRequest();
 
+        private const int FormattedPhoneLength = 13;
+
         private HashSet<string> numbersSentTo = new HashSet<string>();
         private string phoneNumber = null;
         private string skypeName = null;
@@ -220,10 +222,22 @@
         
         private void PhoneClick(object sender, RoutedEventArgs e)
         {
-            // CallContact.Click -= PhoneClick;  // TODO: Account for double-click
+            phoneNumber = Phone.Text;
+
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+            {
+                System.Diagnostics.Debug.WriteLine($"Got null or empty phone number. Skipping.");
+                return;
+            }
+            else if (phoneNumber.Length != FormattedPhoneLength)
+            {
+                ShowToast("Invalid Number", phoneNumber);
+                return;
+            }
 
             if (numbersSentTo.Contains(phoneNumber))
             {
+                System.Diagnostics.Debug.WriteLine($"Recently sent to {phoneNumber}. Skipping.");
                 return;  // Don't do anything
             }
 
@@ -231,29 +245,16 @@
             System.Diagnostics.Debug.WriteLine($"Adding {phoneNumber} to sent numbers");
             PhoneClicked.Invoke(this, new PhoneClickEventArgs(phoneNumber));
 
-            if (phoneNumber == null)
+            try
             {
-                phoneNumber = Phone.Text;
+                string parsedPhoneNumber = string.Format("{0}{1}{2}", phoneNumber.Substring(1, 3),
+                    phoneNumber.Substring(5, 3), phoneNumber.Substring(9, 4));
+                string endpoint = @"api/v1/sendsms";
+                SendHTTP(parsedPhoneNumber, endpoint, MessageType.Number);
             }
-
-            if (phoneNumber.Length != 13)
+            catch (Exception ex)
             {
-                ShowToast("Invalid Number", phoneNumber);
-                phoneNumber = null;
-            }
-            else
-            {
-                try
-                {
-                    string parsedPhoneNumber = string.Format("{0}{1}{2}", phoneNumber.Substring(1, 3),
-                        phoneNumber.Substring(5, 3), phoneNumber.Substring(9, 4));
-                    string endpoint = @"api/v1/sendsms";
-                    SendHTTP(parsedPhoneNumber, endpoint, MessageType.Number);
-                }
-                catch (Exception ex)
-                {
-                    ShowToast("Error", $"When notifying contact, got error: {ex.Message}");
-                }
+                ShowToast("Error", $"When notifying contact, got error: {ex.Message}");
             }
         }
 
@@ -269,12 +270,22 @@
 
         private void CallDoctorClick(object sender, RoutedEventArgs e)
         {
-            if (skypeName == null)
+            skypeName = SkypeName.Text;
+
+            if (string.IsNullOrWhiteSpace(skypeName))
             {
-                skypeName = SkypeName.Text;
+                System.Diagnostics.Debug.WriteLine($"Got null or empty phone number. Skipping.");
+                return;
             }
+
             try
             {
+                // Append with "sip:"
+                if (!skypeName.StartsWith("sip:"))
+                {
+                    skypeName = "sip:" + skypeName;
+                }
+
                 string endpoint = @"api/v1/requestdoctor";
                 SendHTTP(skypeName, endpoint, MessageType.Skype);
             }
@@ -288,33 +299,33 @@
         private string PhoneNumberFormatter(string value)
         {
             value = new Regex(@"\D").Replace(value, string.Empty);
-            if (value.Length > 0 & value.Length < 4)
+
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+            if (value.Length < 4)
             {
                 value = string.Format("({0}", value.Substring(0, value.Length));
-                return value;
             }
-            if (value.Length > 3 & value.Length < 7)
+            else if (value.Length < 7)
             {
                 value = string.Format("({0}){1}", value.Substring(0, 3), value.Substring(3, value.Length - 3));
-                return value;
             }
-            if (value.Length > 6 & value.Length < 11)
+            else if (value.Length < 11)
             {
                 value = string.Format("({0}){1}-{2}", value.Substring(0, 3), value.Substring(3, 3), value.Substring(6));
-                return value;
             }
-
-            if (value.Length > 10)
+            else
             {
                 value = value.Remove(value.Length - 1, 1);
                 value = string.Format("({0}){1}-{2}", value.Substring(0, 3), value.Substring(3, 3), value.Substring(6));
-                return value;
             }
 
             return value;
         }
 
-        private void Phone_TextChanged(object sender, TextChangedEventArgs e)
+        private void PhoneTextChanged(object sender, TextChangedEventArgs e)
         {
             var textBox = sender as TextBox;
             string number = textBox.Text;
