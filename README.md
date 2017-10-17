@@ -42,7 +42,7 @@ curl -i -X POST -H 'Content-Type: application/json' -d '{"number":[number]}' htt
  	"longUrl": "http://481patientnet.com/client.html?org=patientnet2&user=tsaoa&id=CMYNVEIH"
 	}
    ```
-# To run HoloLens application as EMT:<
+# To run HoloLens application as EMT:
 
 * Put on the Hololens and ensure that the PatientNet application is installed
   * If it is not installed:
