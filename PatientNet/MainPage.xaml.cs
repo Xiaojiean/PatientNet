@@ -198,7 +198,7 @@
                 case MessageType.Number:
                     key = "number";
                     title = "Notify Emergency Contact";
-                    success_message = $"Successfully sent SMS to {message}.";
+                    success_message = $"Successfully sent SMS to {PhoneNumberFormatter(message)}.";
                     break;
                 case MessageType.Skype:
                     key = "skypeid";
@@ -305,17 +305,17 @@
 
             try
             {
-                const string skypeNamePrefix = "sip:";
+                /*const string skypeNamePrefix = "sip:";
                 const string skypeNameSuffix = "@skypeids.net";
 
-                if (!skypeName.StartsWith(skypeNamePrefix))
+                (if (!skypeName.StartsWith(skypeNamePrefix))
                 {
                     skypeName = skypeNamePrefix + skypeName;
                 }
                 if (!skypeName.EndsWith(skypeNameSuffix))
                 {
                     skypeName += skypeNameSuffix;
-                }
+                }*/
 
                 string endpoint = RequestDoctorsEndpoint;
                 SendHTTP(skypeName, endpoint, MessageType.Skype);

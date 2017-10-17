@@ -76,17 +76,17 @@
             VerticalAlignment="Center"
             TextAlignment="Center"
             Foreground="Black" 
-            Margin="0,150,0,0" 
+            Margin="0,175,0,0" 
             Height="70" IsDoubleTapEnabled="False" IsTapEnabled="False" IsHoldingEnabled="False" IsRightTapEnabled="False" 
         />
 
         <!-- Textbox for User Help -->
-        <Border BorderBrush="{x:Null}" Height="100" Margin="0,0,0,100">
+        <Border BorderBrush="{x:Null}" Height="100" Margin="0,0,0,-75">
             <TextBlock 
                 x:Name="UserHelp"
                 Width="150"
                 TextWrapping="WrapWholeWords"
-                FontSize="12.5px"
+                FontSize="15px"
                 HorizontalAlignment="Center"
                 TextAlignment="Center"
                 Foreground="Black" 
