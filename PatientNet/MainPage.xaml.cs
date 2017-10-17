@@ -24,8 +24,6 @@
     using System.Net.Http.Headers;
     using Newtonsoft.Json;
     using System.Text;
-    using Windows.Data.Xml.Dom;
-    using Windows.UI.Notifications;
     using System.Text.RegularExpressions;
 
     /// <summary>
@@ -39,6 +37,8 @@
 
         private const int FormattedPhoneLength = 13;
         private const int SendSleepTimeInMilliseconds = 5000;
+        private const string SendSmsEndpoint = "api/v1/sendsms";
+        private const string RequestDoctorsEndpoint = "api/v1/requestdoctor";
 
         private Logger logger = new Logger();
         private HashSet<string> numbersSentTo = new HashSet<string>();
@@ -211,6 +211,8 @@
 
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(content_type));
             httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
+            
+            
 
             try
             {
@@ -223,11 +225,11 @@
 
                 if (response.IsSuccessStatusCode)
                 {
-                    ShowToast(title, success_message);
+                    NotifyUser($"{title}: {success_message}");
                 }
                 else
                 {
-                    ShowToast(title, "Unsuccessful");
+                    NotifyUser($"{title}: Unsuccessful. Please try again.");
                 }
             }
             catch (Exception ex)
@@ -249,15 +251,10 @@
         private void PhoneClick(object sender, RoutedEventArgs e)
         {
             string phoneNumber = Phone.Text;
-
-            if (string.IsNullOrWhiteSpace(phoneNumber))
+            
+            if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length != MainPage.FormattedPhoneLength)
             {
-                this.logger.Log($"Got null or empty phone number. Skipping.");
-                return;
-            }
-            else if (phoneNumber.Length != MainPage.FormattedPhoneLength)
-            {
-                ShowToast("Invalid Number", phoneNumber);
+                NotifyUser($"Invalid Number. Please try again.");
                 return;
             }
 
@@ -275,12 +272,13 @@
             {
                 string parsedPhoneNumber = string.Format("{0}{1}{2}", phoneNumber.Substring(1, 3),
                     phoneNumber.Substring(5, 3), phoneNumber.Substring(9, 4));
-                string endpoint = @"api/v1/sendsms";
+                string endpoint = SendSmsEndpoint;
                 SendHTTP(parsedPhoneNumber, endpoint, MessageType.Number);
             }
             catch (Exception ex)
             {
-                ShowToast("Error", $"When notifying contact, got error: {ex.Message}");
+                this.logger.Log($"Error: when notifying contact, got exception: {ex.Message}");
+                NotifyUser($"Error notifying contact: {ex.Message}");
             }
         }
 
@@ -290,7 +288,8 @@
 
             if (string.IsNullOrWhiteSpace(skypeName))
             {
-                this.logger.Log($"Got null or empty phone number. Skipping.");
+                this.logger.Log($"Got null or empty skype name. Skipping.");
+                NotifyUser("Please enter a skype name.");
                 return;
             }
 
@@ -318,12 +317,13 @@
                     skypeName += skypeNameSuffix;
                 }
 
-                string endpoint = @"api/v1/requestdoctor";
+                string endpoint = RequestDoctorsEndpoint;
                 SendHTTP(skypeName, endpoint, MessageType.Skype);
             }
             catch (Exception ex)
             {
-                ShowToast("Error", $"When notifying contact, got error: {ex.Message}");
+                this.logger.Log($"Error: When requesting doctors, got exception: {ex.Message}");
+                NotifyUser($"Error requesting doctors: {ex.Message}");
                 return;
             }
         }
@@ -370,22 +370,31 @@
             }
         }
 
-        private static void ShowToast(string title, string content)
+        private async void NotifyUser(string content)
         {
-            XmlDocument toastXml = new XmlDocument();
-            string xml = $@"
-                <toast activationType='foreground'>
-                <visual>
-                <binding template='ToastGeneric'>
-                    <text>{title}</text>
-                    <text>{content}</text>
-                </binding>
-                </visual>
-                </toast>";
-            toastXml.LoadXml(xml);
-            ToastNotification toast = new ToastNotification(toastXml);
-            ToastNotificationManager.CreateToastNotifier().Show(toast);
+            UserNotifications.Text = content;
+
+            await Task.Delay(3000);
+
+            if (UserNotifications.Text == content)
+            {
+                UserNotifications.Text = string.Empty;
+            }
         }
 
+        private void Phone_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            UserHelp.Text = "";
+        }
+
+        private void SkypeName_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            UserHelp.Text = "";
+        }
+
+        private void Help_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+
+        }
     }
 }

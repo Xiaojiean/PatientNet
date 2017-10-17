@@ -45,7 +45,9 @@
             MaxLength="13" 
             Height="62"          
             KeyDown="PhoneDownHandler"
-            TextChanged="PhoneTextChanged"/>
+            TextChanged="PhoneTextChanged"
+            PointerEntered="Phone_PointerEntered"
+            PointerExited="Help_PointerExited"/>
         
         <!-- Textbox to enter EMT's skype name -->
         <TextBox 
@@ -60,18 +62,22 @@
             Margin="400,150,0,0" 
             Height="62" 
             KeyDown="SkypeNameDownHandler"
+            PointerEntered="SkypeName_PointerEntered"
+            PointerExited="Help_PointerExited"
         />
 
         <!-- Textbox for Notifications on Phone Number -->
-        <TextBox 
-            x:Name="UserNotifications" 
-            Background="Transparent" 
-            Width="500"  
+        <TextBlock 
+            x:Name="UserNotifications"
+            Width="500"
+            TextWrapping="WrapWholeWords"
+            FontSize="20px"
             HorizontalAlignment="Center" 
-            VerticalAlignment="Center" 
-            Foreground="Transparent" 
-            Margin="0,225,0,0" 
-            Height="65" IsDoubleTapEnabled="False" IsHoldingEnabled="False" IsRightTapEnabled="False" 
+            VerticalAlignment="Center"
+            TextAlignment="Center"
+            Foreground="Black" 
+            Margin="0,150,0,0" 
+            Height="70" IsDoubleTapEnabled="False" IsTapEnabled="False" IsHoldingEnabled="False" IsRightTapEnabled="False" 
         />
 
         <!-- Button to notify Emergency Contact -->
