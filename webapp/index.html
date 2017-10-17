@@ -42,6 +42,11 @@
     var meetingId = null;
     var googleApiKey = "AIzaSyBSb9EvtAm8Ntcj5-Rt4L-9gqMeJmMj7kA";
 
+    function refreshTable(){
+	var iframe = document.getElementById('fileTable');
+	iframe.src = iframe.src;
+    }
+
     (function () {
 	document.getElementById("callHelp").style.display = "none";
 	if (!location.href.includes("access_token")) {
@@ -109,7 +114,9 @@
           '&prompt=admin_consent'
         );
       };*/
-           
+      function refreshTable(){
+	console.log("Hello from refresh")
+      }
       function initHandlers(client) {
               //Event handler: whenever app state changes, display its value
               client.signInManager.state.changed(function (state) {
@@ -147,6 +154,7 @@
       Initializing Skype Web SDK & Conversation Control.
       On success, will login in the user to Sype as well by making a callback.
       */
+      
       function skypeInit(_loginCallback) {
           Skype.initialize({apiKey:config.apiKeyCC},function(api){
               apiManager = api;
