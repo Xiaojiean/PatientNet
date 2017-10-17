@@ -85,7 +85,7 @@ wss.on('connection', function(client) {
 			twilioClient.messages.create({
 				to: "+1" + msg.number,
 				from: "+12062026089",
-				body: "View the patient at " + msg.link,
+				body: "You have been called as an Emergency Contact. Start a conversation with the doctor here: " + msg.link,
 			}, function(err, message) {
 				if (err){
 					console.log(err);
