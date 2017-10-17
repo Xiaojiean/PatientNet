@@ -214,7 +214,7 @@
             }
             catch (Exception ex)
             {
-                ShowToast("Exception", ex.Message);
+                System.Diagnostics.Debug.WriteLine($"Exception: {ex.Message}");
             }
         }
         
@@ -252,7 +252,7 @@
                 }
                 catch (Exception ex)
                 {
-                    ShowToast("PhoneClick()", ex.Message);
+                    ShowToast("Error", $"When notifying contact, got error: {ex.Message}");
                 }
             }
         }
@@ -280,7 +280,7 @@
             }
             catch (Exception ex)
             {
-                ShowToast("CallDoctorClick()", ex.Message);
+                ShowToast("Error", $"When notifying contact, got error: {ex.Message}");
                 return;
             }
         }
