@@ -7,18 +7,25 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>PatientNet Doctor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="app.css"><!--layout file-->
   <script src="./config.js"></script> <!-- setting file-->
   <script src="https://swx.cdn.skype.com/shared/v/1.2.15/SkypeBootstrap.min.js"></script><!--Skype Web SDK-->
+  <link rel="stylesheet" href="app.css"><!--layout file-->
 </head>
 <body>
   <div class="topnav">
-	  <h1>PatientNet Site</h1>
+	 <h1>PatientNet Site</h1>
   </div>
+  <script type="text/javascript" src="./skype-uri.js"></script>
   <div id="body">
   	<div id="SigninStatus"></div>
 	<div id="loader"></div>
-  	<div id="conversationWindow"></div>
+	<div id="conversationWindow"></div>
+	<div id="call">
+		<div id="SkypeButton_Call_austin425_1"></div>
+		<p id="callHelp">Call the EMT. This will require a personal Skype Account.</div>
+	</div>
+	<button id="refreshButton" onclick="refreshTable">Refresh Table</button>
+	<iframe id="fileTable" src="https://drive.google.com/embeddedfolderview?id=0B_Mq6umAVCRGdS1aLWdtV1ZTbEU#list"></iframe>
   </div>  
   <script type="text/javascript">
     var apiManager = null;
@@ -36,6 +43,7 @@
     var googleApiKey = "AIzaSyBSb9EvtAm8Ntcj5-Rt4L-9gqMeJmMj7kA";
 
     (function () {
+	document.getElementById("callHelp").style.display = "none";
 	if (!location.href.includes("access_token")) {
 		location.assign(
 		    config.loginurl+
@@ -56,8 +64,16 @@
 		        console.log("Shortlink: " + shortLink);
 		        wsc.send(JSON.stringify(obj));
 		      } else if (signal.type == 'request') {
+			      //skypeid = signal.skypeid;
 			      if(confirm("Would you want to accept a request from EMT with id: " + signal.skypeid + "?")) {
-				window.open("https://481patientnet.com/doc.html?" + signal.skypeid + "#access_token=" + token, "_blank"); 
+				SkypeUri.ui({
+					"name": "call",
+					"element": "SkypeButton_Call_austin425_1",
+					"participants": [signal.skypeid],
+					"imageSize": 32,
+				});
+				document.getElementById("callHelp").style.display = "block";
+				//window.open("https://481patientnet.com/doc.html?" + signal.skypeid + "#access_token=" + token, "_blank"); 
 			      }
 		      }
 	    	};
@@ -157,7 +173,7 @@
         };
         
         contactClient.signInManager.signIn(params).then(function(){
-          document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + contactClient.personsAndGroupsManager.mePerson.displayName();
+          document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + '. Please wait for the emergency contact to join this meeting. Note that only audio calls are supported at this time.';
 	  //loadChat();
 	  scheduleMeeting();
         },function(error){

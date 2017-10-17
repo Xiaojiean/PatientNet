@@ -169,7 +169,7 @@
           document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + contactClient.personsAndGroupsManager.mePerson.displayName();
 	  //loadChat();
 	  //scheduleMeeting();
-	  createConversation("sip:wmcayo@patientnet2.onmicrosoft.com");
+	  createConversation(emtSip);
         },function(error){
           console.log(error);
         });        
