@@ -74,9 +74,9 @@ h1 {
 	margin-right:auto;
 }
 
-#call, #SkypeButton_Call_austin425_1{
-	display: inline;
-	float: right;
+#call{
+	float:right;
+	width: 300px;
 }
 
 @-webkit-keyframes spin {
