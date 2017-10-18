@@ -24,9 +24,13 @@
 		<div id="SkypeButton_Call_austin425_1"></div>
 		<p id="callHelp">Call the EMT. This will require a personal Skype Account.</div>
 	</div>
-	<button id="refreshButton" onclick="refreshTable">Refresh Table</button>
-	<iframe id="fileTable" src="https://drive.google.com/embeddedfolderview?id=0B_Mq6umAVCRGdS1aLWdtV1ZTbEU#list" width="500"></iframe>
-  </div>  
+	<div class="iframeDiv">
+	<iframe id="fileTable" class="iframeTable" src="https://drive.google.com/embeddedfolderview?id=0B_Mq6umAVCRGdS1aLWdtV1ZTbEU#list" width="650" height="200"></iframe>
+  	</div>
+	<div class="tableBar">
+	<button id="refreshButton" onclick="refreshTable()">Refresh Table</button>
+	</div>
+    </div>  
   <script type="text/javascript">
     var apiManager = null;
     var token = null;
