@@ -10,6 +10,7 @@
 
 body {
 	margin: 0px;
+	font-family: Helvetica;
 }
 
 h1 {
@@ -30,6 +31,7 @@ h1 {
 	width: 850px;
 	margin: 0px auto;
 	margin-top: 60px;
+	font-family: Helvetica;
 }
 
 #conversationWindow {
@@ -65,7 +67,7 @@ h1 {
 	height: 30px;
 	width: 400px;
 	margin-top: 15px;
-	margin-bottom: 50px;
+	margin-bottom: 100px;
 }
 
 .tableBar {
@@ -78,6 +80,24 @@ h1 {
 	float:right;
 	width: 300px;
 }
+
+#SigninStatus {
+	//background-color: red;
+	border: 4px solid #b3d1ff;
+	border-radius: 10%;
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+
+.footer {
+	  position: fixed;
+	  background-color: #b3d1ff;
+	  bottom: 0;
+          left: 0;
+	  right: 0;
+	  width: 100%;
+	  text-align: center;
+  }
 
 @-webkit-keyframes spin {
 	0% { -webkit-transform: rotate(0deg); }
