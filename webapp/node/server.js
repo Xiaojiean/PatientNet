@@ -7,7 +7,8 @@ const WebSocketServer = require('ws').Server,
 	bodyParser = require('body-parser'),
 	http = require('https'),
 	app = express(),
-	fs = require('fs');
+	fs = require('fs'),
+	config = require('./config.js');
 
 var cfg = {
 	ssl: true,
@@ -16,9 +17,16 @@ var cfg = {
 };
 var wsClients = [];
 //Keys for TWilio
-var sid = 'ACe01de1c8c080e8ef0548b528f7e4460f';
-var token = 'b193e08a8168d978dbef62d0fe4fe035';
-var twilioClient = require('twilio')(sid, token);
+var twilioClient = require('twilio')(config.twilioSid, config.twilioKey);
+
+//Keys for SendGrid
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(config.sendGridKey);
+const emailMsg = {
+	from: 'no-reply@patientnet2.com',
+	subject: 'You have been selected as an Emergency Contact!',
+	text: "You have been called as an Emergency Contact. Start a conversation with the doctor here: ",
+};
 
 const pKey = fs.readFileSync(cfg.ssl_key),
 	pCert = fs.readFileSync(cfg.ssl_cert),
@@ -44,6 +52,16 @@ app.post('/api/v1/sendsms', function(req, res) {
 	res.status(200).send("OK");
 });
 
+app.post('/api/v1/sendemail', function(req, res) {
+	console.log('/api/v1/sendemail received: ' + JSON.stringify(req.body));
+	var obj = {};
+	obj['type'] = 'email';
+	obj['email'] = req.body.email;
+	obj['message'] = JSON.stringify(req.body);
+	sendMessage(obj);
+	res.status(200).send("OK");
+});
+
 app.post('/api/v1/requestdoctor', function(req, res) {
 	console.log('/api/v1/requestdoctor received: ' + JSON.stringify(req.body));
 	var obj = {};
@@ -56,7 +74,7 @@ app.post('/api/v1/requestdoctor', function(req, res) {
 
 function sendMessage(obj){
 	if(wsClients.length == 0) {
-		res.status(500).send("No doctors connected");
+		//res.status(500).send("No doctors connected");
 		return;
 	}
 	for(var i = wsClients.length - 1; i >= 0; i--) {
@@ -81,7 +99,7 @@ wss.on('connection', function(client) {
 	wsClients.push(client);
 	client.on('message', function(message) {
 		var msg = JSON.parse(message);
-		if(msg.link && msg.number){
+		if(msg.type == 'sms'){
 			twilioClient.messages.create({
 				to: "+1" + msg.number,
 				from: "+12062026089",
@@ -92,6 +110,10 @@ wss.on('connection', function(client) {
 				}
 		
 			});
+		} else if (msg.type == 'email') {
+			emailMsg.to = msg.email;
+			emailMsg.text = emailMsg.text + msg.link;
+			sgMail.send(emailMsg);
 		}
 	});
 });

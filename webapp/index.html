@@ -71,11 +71,19 @@
 		      console.log("Server received message: " + signal.message);
 		      if(signal.type == 'sms') {
 			var obj = {};
+			obj['type'] = 'sms';
 			obj['link'] = shortLink;
 			obj['number'] = signal.number;
 		        console.log("Shortlink: " + shortLink);
 		        wsc.send(JSON.stringify(obj));
-		      } else if (signal.type == 'request') {
+		      } else if (signal.type == 'email') {
+			var obj = {};
+			obj['type'] = 'email';
+			obj['link'] = shortLink;
+			obj['email'] = signal.email;
+		        console.log("Shortlink: " + shortLink);
+		        wsc.send(JSON.stringify(obj));
+	      	      } else if (signal.type == 'request') {
 			      //skypeid = signal.skypeid;
 			      if(confirm("Would you want to accept a request from EMT with id: " + signal.skypeid + "?")) {
 				SkypeUri.ui({
