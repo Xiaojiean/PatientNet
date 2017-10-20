@@ -30,20 +30,22 @@
             <Bold> PatientNet </Bold>
         </TextBlock>
 
+        <Image Source="Assets/PatientNet_Doctor_Pic.png" Width="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="630,0,0,120"/>
+        <Image Source="Assets/PatientNet_Phone_Pic.png" Width="60" Margin="-680,0,0,120"/>
+
         <!-- Textbox to enter emergency contact phone number -->
+        <!-- InputScope="TelephoneNumber" -->
         <TextBox 
             x:Name="Phone" 
             Background="Transparent" 
-            Width="150" 
-            Header="Enter Phone Number" 
+            Width="200" 
             PlaceholderText="(XXX)XXX-XXXX" 
-            InputScope="Number" 
             HorizontalAlignment="Center" 
             VerticalAlignment="Top" 
             Foreground="SlateGray" 
-            Margin="-400,150,0,0" 
-            MaxLength="13" 
-            Height="62"          
+            Margin="-400,180,0,0" 
+            Height="32"          
+            IsEnabled="False" 
             KeyDown="PhoneDownHandler"
             TextChanged="PhoneTextChanged"
             PointerEntered="Phone_PointerEntered"
@@ -77,7 +79,11 @@
             TextAlignment="Center"
             Foreground="Black" 
             Margin="0,175,0,0" 
-            Height="70" IsDoubleTapEnabled="False" IsTapEnabled="False" IsHoldingEnabled="False" IsRightTapEnabled="False" 
+            Height="70" 
+            IsDoubleTapEnabled="False" 
+            IsTapEnabled="False" 
+            IsHoldingEnabled="False" 
+            IsRightTapEnabled="False" 
         />
 
         <!-- Textbox for User Help -->
@@ -143,6 +149,58 @@
                     BorderBrush="SlateGray" 
                     BorderThickness="1">
                         <TextBlock Text="Notify All Doctors" 
+                           Margin="10,6.5" 
+                           Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
+                    </Border>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- Button to Select Phone -->
+        <StackPanel>
+            <Button
+                x:Name="SelectPhone"
+                Background="Transparent"
+                HorizontalAlignment="Center"
+                Margin="-497,140.5,0,0"
+                VerticalAlignment="Top"
+                Width="125"
+                Click="PhoneSelected"
+                PointerEntered="Phone_PointerEntered"
+                PointerExited="Help_PointerExited" >
+                <StackPanel>
+                    <Border 
+                    Background="LightSkyBlue" 
+                    Opacity="0.78"
+                    BorderBrush="SlateGray" 
+                        BorderThickness="1">
+                        <TextBlock Text="Enter Phone" 
+                           Margin="10,6.5" 
+                           Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
+                    </Border>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- Button to Select Email -->
+        <StackPanel>
+            <Button
+                x:Name="SelectEmail"
+                Background="Transparent"
+                HorizontalAlignment="Center"
+                Margin="-297,140.5,0,0"
+                VerticalAlignment="Top"
+                Width="125"
+                Click="EmailSelected"
+                PointerEntered="Phone_PointerEntered"
+                PointerExited="Help_PointerExited" >
+                <StackPanel>
+                    <Border 
+                    Background="LightSkyBlue" 
+                    Opacity="0.78"
+                    BorderBrush="SlateGray" 
+                        BorderThickness="1">
+                        <TextBlock Text="Enter Email" 
                            Margin="10,6.5" 
                            Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
                     </Border>

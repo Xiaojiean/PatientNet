@@ -32,12 +32,14 @@
     public sealed partial class MainPage : Page
     {
         MediaCapture _mediaCapture;
-        bool _isPreviewing;
         DisplayRequest _displayRequest = new DisplayRequest();
+        bool _isPreviewing;
+        MessageType input;
 
         private const int FormattedPhoneLength = 13;
         private const int SendSleepTimeInMilliseconds = 5000;
         private const string SendSmsEndpoint = "api/v1/sendsms";
+        private const string SendEmailEndpoint = "api/v1/sendemail";
         private const string RequestDoctorsEndpoint = "api/v1/requestdoctor";
 
         private Logger logger = new Logger();
@@ -49,7 +51,7 @@
 
         enum MessageType
         {
-            Number, Skype
+            Number, Skype, Email
         };
 
         public MainPage()
@@ -200,6 +202,11 @@
                     title = "Notify Emergency Contact";
                     success_message = $"Successfully sent SMS to {PhoneNumberFormatter(message)}.";
                     break;
+                case MessageType.Email:
+                    key = "email";
+                    title = "Notify Emergency Contact";
+                    success_message = $"Successfully sent email to {message}.";
+                    break;
                 case MessageType.Skype:
                     key = "skypeid";
                     title = "Notify All Doctors";
@@ -248,35 +255,63 @@
 
         private void PhoneClick(object sender, RoutedEventArgs e)
         {
-            string phoneNumber = Phone.Text;
-            
-            if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length != MainPage.FormattedPhoneLength)
+            if (input == MessageType.Number)
             {
-                NotifyUser($"Invalid Number. Please try again.");
+                string phoneNumber = Phone.Text;
+
+                if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length != MainPage.FormattedPhoneLength)
+                {
+                    NotifyUser($"Invalid Number. Please try again.");
+                    return;
+                }
+
+                if (this.numbersSentTo.Contains(phoneNumber))
+                {
+                    this.logger.Log($"Recently sent to {phoneNumber}. Skipping.");
+                    return;  // Don't do anything
+                }
+
+                // Add phone number to set of numbers
+                this.logger.Log($"Adding {phoneNumber} to {this.numbersSentTo}");
+                SentRequest.Invoke(this, new RequestEventArgs(this.numbersSentTo, phoneNumber));
+
+                try
+                {
+                    string parsedPhoneNumber = string.Format("{0}{1}{2}", phoneNumber.Substring(1, 3),
+                        phoneNumber.Substring(5, 3), phoneNumber.Substring(9, 4));
+                    string endpoint = SendSmsEndpoint;
+                    SendHTTP(parsedPhoneNumber, endpoint, MessageType.Number);
+                }
+                catch (Exception ex)
+                {
+                    this.logger.Log($"Error: when notifying contact, got exception: {ex.Message}");
+                    NotifyUser($"Error notifying contact: {ex.Message}");
+                }
+            }
+            else if (input == MessageType.Email)
+            {
+                string email = Phone.Text;
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    NotifyUser($"Invalid Email. Please try again.");
+                    return;
+                }
+
+                try
+                {
+                    string endpoint = SendEmailEndpoint;
+                    SendHTTP(email, endpoint, MessageType.Email);
+                }
+                catch (Exception ex)
+                {
+                    this.logger.Log($"Error: when notifying contact, got exception: {ex.Message}");
+                    NotifyUser($"Error notifying contact: {ex.Message}");
+                }
+            }
+            else
+            {
                 return;
-            }
-
-            if (this.numbersSentTo.Contains(phoneNumber))
-            {
-                this.logger.Log($"Recently sent to {phoneNumber}. Skipping.");
-                return;  // Don't do anything
-            }
-
-            // Add phone number to set of numbers
-            this.logger.Log($"Adding {phoneNumber} to {this.numbersSentTo}");
-            SentRequest.Invoke(this, new RequestEventArgs(this.numbersSentTo, phoneNumber));
-
-            try
-            {
-                string parsedPhoneNumber = string.Format("{0}{1}{2}", phoneNumber.Substring(1, 3),
-                    phoneNumber.Substring(5, 3), phoneNumber.Substring(9, 4));
-                string endpoint = SendSmsEndpoint;
-                SendHTTP(parsedPhoneNumber, endpoint, MessageType.Number);
-            }
-            catch (Exception ex)
-            {
-                this.logger.Log($"Error: when notifying contact, got exception: {ex.Message}");
-                NotifyUser($"Error notifying contact: {ex.Message}");
             }
         }
 
@@ -326,6 +361,36 @@
             }
         }
 
+        private void PhoneSelected(object sender, RoutedEventArgs e)
+        {
+            input = MessageType.Number;
+            Phone.MaxLength = 13;
+            Phone.PlaceholderText = "(XXX)XXX-XXXX";
+            Phone.Text = string.Empty;
+            Phone.IsEnabled = true;
+
+            InputScope scope = new InputScope();
+            InputScopeName scopeName = new InputScopeName();
+            scopeName.NameValue = InputScopeNameValue.TelephoneNumber;
+            scope.Names.Add(scopeName);
+            Phone.InputScope = scope;
+        }
+    
+        private void EmailSelected(object sender, RoutedEventArgs e)
+        {
+            input = MessageType.Email;
+            Phone.MaxLength = 100;
+            Phone.PlaceholderText = "johndoe@gmail.com";
+            Phone.Text = string.Empty;
+            Phone.IsEnabled = true;
+
+            InputScope scope = new InputScope();
+            InputScopeName scopeName = new InputScopeName();
+            scopeName.NameValue = InputScopeNameValue.EmailNameOrAddress;
+            scope.Names.Add(scopeName);
+            Phone.InputScope = scope;
+        }
+
         private string PhoneNumberFormatter(string value)
         {
             value = new Regex(@"\D").Replace(value, string.Empty);
@@ -359,12 +424,15 @@
         {
             var textBox = sender as TextBox;
             string number = textBox.Text;
-            textBox.Text = PhoneNumberFormatter(number);
-
-            // This gets kinda bad when the user tries to insert or delete from the middle
-            if (textBox.Text.Length != 0)
+            if (input == MessageType.Number)
             {
-                textBox.SelectionStart = textBox.Text.Length;
+                textBox.Text = PhoneNumberFormatter(number);
+
+                // This gets kinda bad when the user tries to insert or delete from the middle
+                if (textBox.Text.Length != 0)
+                {
+                    textBox.SelectionStart = textBox.Text.Length;
+                }
             }
         }
 

@@ -125,6 +125,8 @@
     <Content Include="Assets\LargeTile.scale-200.png" />
     <Content Include="Assets\LargeTile.scale-400.png" />
     <Content Include="Assets\PatientNet_Background.jpg" />
+    <Content Include="Assets\PatientNet_Doctor_Pic.png" />
+    <Content Include="Assets\PatientNet_Phone_Pic.png" />
     <Content Include="Assets\SmallTile.scale-100.png" />
     <Content Include="Assets\SmallTile.scale-125.png" />
     <Content Include="Assets\SmallTile.scale-150.png" />
