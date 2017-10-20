@@ -7,7 +7,8 @@ const WebSocketServer = require('ws').Server,
 	bodyParser = require('body-parser'),
 	http = require('https'),
 	app = express(),
-	fs = require('fs');
+	fs = require('fs'),
+	config = require('./config.js');
 
 var cfg = {
 	ssl: true,
@@ -16,14 +17,11 @@ var cfg = {
 };
 var wsClients = [];
 //Keys for TWilio
-var sid = 'ACe01de1c8c080e8ef0548b528f7e4460f';
-var token = 'b193e08a8168d978dbef62d0fe4fe035';
-var twilioClient = require('twilio')(sid, token);
+var twilioClient = require('twilio')(config.twilioSid, config.twilioKey);
 
 //Keys for SendGrid
 const sgMail = require('@sendgrid/mail');
-var apiKey = "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";
-sgMail.setApiKey(apiKey);
+sgMail.setApiKey(config.sendGridKey);
 const emailMsg = {
 	from: 'no-reply@patientnet2.com',
 	subject: 'You have been selected as an Emergency Contact!',
