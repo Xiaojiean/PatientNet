@@ -13,22 +13,23 @@
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script><!--JQuery-->
 </head>
 <body>
-  <div class="topnav">
+  <div id="container">
+    <div class="topnav">
 	  <h1>PatientNet Site</h1>
-  </div>
-  <div id="body">
+    </div>
+    <div id="body">
   	<div id="SigninStatus"></div>
   	<div id="conversationWindow"></div>
   	<div id="conversationContainer"></div>
-	<div id="loader"</div>
-	<div class = "footer">
-	  <p>PatientNet - EECS 498</p>
+	<div class="tableBar">
+		<button class="button" onClick="window.open('https://script.google.com/a/umich.edu/macros/s/AKfycbxmEmVEfqLbqXyN3eRTGKXi4AbglO9Y-C_DZLP7XgoSxqO7em_c/exec');">Upload Files</button>
 	</div>
+	<div id="loader"</div>
+    </div>
+    <div class = "footer">
+	  <p>PatientNet - EECS 498</p>
+    </div>
   </div>
-
-  <div>
-	      		<button class="button" onClick="window.open('https://script.google.com/a/umich.edu/macros/s/AKfycbxmEmVEfqLbqXyN3eRTGKXi4AbglO9Y-C_DZLP7XgoSxqO7em_c/exec');"><span class="icon">Upload Files</span></button>
-  </div>	
 
   <script type="text/javascript">
     var apiManager = null,
