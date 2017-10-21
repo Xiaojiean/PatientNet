@@ -22,10 +22,10 @@ var twilioClient = require('twilio')(config.twilioSid, config.twilioKey);
 //Keys for SendGrid
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(config.sendGridKey);
+const emailBody = "You have been called as an Emergency Contact. Start a conversation with the doctor here: ";
 const emailMsg = {
 	from: 'no-reply@patientnet2.com',
 	subject: 'You have been selected as an Emergency Contact!',
-	text: "You have been called as an Emergency Contact. Start a conversation with the doctor here: ",
 };
 
 const pKey = fs.readFileSync(cfg.ssl_key),
@@ -112,7 +112,7 @@ wss.on('connection', function(client) {
 			});
 		} else if (msg.type == 'email') {
 			emailMsg.to = msg.email;
-			emailMsg.text = emailMsg.text + msg.link;
+			emailMsg.text = emailBody + msg.link;
 			sgMail.send(emailMsg);
 		}
 	});
