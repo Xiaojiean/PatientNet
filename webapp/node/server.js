@@ -15,7 +15,8 @@ var cfg = {
 	ssl_key: './ssl/privkey.pem',
 	ssl_cert:'./ssl/fullchain.pem'
 };
-var wsClients = [];
+var wsClients = {};
+var emts = [];
 //Keys for TWilio
 var twilioClient = require('twilio')(config.twilioSid, config.twilioKey);
 
@@ -42,6 +43,7 @@ app.use(function(req, res, next) {
 	next();
 });
 
+/*
 app.post('/api/v1/sendsms', function(req, res) {
 	console.log('/api/v1/sendsms received: ' + JSON.stringify(req.body));
 	var obj = {};
@@ -61,31 +63,63 @@ app.post('/api/v1/sendemail', function(req, res) {
 	sendMessage(obj);
 	res.status(200).send("OK");
 });
+*/
 
 app.post('/api/v1/requestdoctor', function(req, res) {
 	console.log('/api/v1/requestdoctor received: ' + JSON.stringify(req.body));
 	var obj = {};
 	obj['type'] = 'request';
 	obj['skypeid'] = req.body.skypeid;
+	obj['email'] = req.body.email;
+	obj['number'] = req.body.number;
 	obj['message'] = JSON.stringify(req.body);
+	emts.push(obj);
 	sendMessage(obj);
 	res.status(200).send("OK");
 });
 
+function emtAccepted(emtId) {
+	for(var i = emts.length - 1; i >= 0; i--) {
+		if (emts[i].skypeid == emtId) {
+			emts.splice(i, 1);
+			break;
+		}
+	}
+	var obj = {};
+	obj['type'] = 'remove';
+	obj['skypeid'] = emtId;
+	obj['message'] = 'Remove id: ' + emtId;
+	sendMessage(obj);
+}
+
 function sendMessage(obj){
+	updateClients();
 	if(wsClients.length == 0) {
 		//res.status(500).send("No doctors connected");
 		return;
 	}
-	for(var i = wsClients.length - 1; i >= 0; i--) {
-		var cli = wsClients[i];
-		if(cli.readyState === cli.OPEN){
+	for (var key in wsClients) {
+		var cli = wsClients[key];
+		if(cli.readyState == cli.OPEN) {
+			console.log("Sending obj: " + JSON.stringify(obj) + " to key: " + key);
 			cli.send(JSON.stringify(obj));
-		} else {
-			cli.close();
-			wsClients.splice(i, 1);
 		}
 	}
+}
+
+//Check if clients are open, if not, remove them from dictionary.
+function updateClients() {
+	var tmp = {};
+	for (var key in wsClients) {
+		var cli = wsClients[key];
+		if(cli.readyState != cli.OPEN) {
+			console.log("Removing id: " + key);
+			delete wsClients[cli];
+		} else {
+			tmp[key] = cli;
+		}
+	}
+	wsClients = tmp;
 }
 
 var server = http.createServer({key:pKey, cert:pCert}, app).listen(3001, function(){
@@ -96,10 +130,22 @@ var wss = new WebSocketServer({server: server});
 /* on connect */
 wss.on('connection', function(client) {
 	console.log("A new WebSocket client was connected.");
-	wsClients.push(client);
+	//wsClients.push(client);
+	var obj = {};
+	obj['type'] = 'hello';
+	obj['message'] = 'hello';
+	client.send(JSON.stringify(obj));
+	
 	client.on('message', function(message) {
 		var msg = JSON.parse(message);
-		if(msg.type == 'sms'){
+		if (msg.type == 'hello') {
+			console.log("received id: " + msg.webId);
+			wsClients[msg.webId] = client;
+			for (var i = 0; i < emts.length; i++) {
+				client.send(JSON.stringify(emts[i]));
+			}
+		} else if(msg.type == 'sms'){
+			emtAccepted(msg.skypeid);
 			twilioClient.messages.create({
 				to: "+1" + msg.number,
 				from: "+12062026089",
@@ -111,6 +157,7 @@ wss.on('connection', function(client) {
 		
 			});
 		} else if (msg.type == 'email') {
+			emtAccepted(msg.skypeid);
 			emailMsg.to = msg.email;
 			emailMsg.text = emailBody + msg.link;
 			sgMail.send(emailMsg);

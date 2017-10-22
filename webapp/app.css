@@ -75,7 +75,7 @@ h1 {
 
 .iframeDiv {
 	width: 650px;
-	height: 200px;
+	height: 300px;
 	border: 4px solid #b3d1ff;
 	margin-right:auto;
 	margin-left:auto;
@@ -95,13 +95,8 @@ h1 {
 	margin-right:auto;
 }
 
-#call{
-	float:right;
-	width: 300px;
-}
-
 #SigninStatus {
-	//background-color: red;
+	text-align: center;
 	border: 4px solid #b3d1ff;
 	border-radius: 10%;
 	margin-top: 20px;
@@ -117,6 +112,29 @@ h1 {
 	  width: 100%;
 	  text-align: center;
   }
+
+#endCall {
+	 margin-right:auto;
+	 margin-left:auto;
+	 display: none;
+}
+
+#emtlist {
+	 /* Remove default list styling */
+	 width: 650px;
+	 list-style-type: none;
+	 padding: 0;
+	 margin-right:auto;
+	 margin-left:auto;
+	 display:none;
+}
+
+#emtlist li {
+	border:1px solid #ddd;
+       	background-color:#f6f6f6;
+       	padding:12px;
+	display: block;
+}
 
 @-webkit-keyframes spin {
 	0% { -webkit-transform: rotate(0deg); }

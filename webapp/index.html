@@ -19,14 +19,20 @@
     <script type="text/javascript" src="./skype-uri.js"></script>
     <div id="body">
   	<div id="SigninStatus"></div>
+	<button id="endCall" onclick="endCall()">End Conversation</div>
+	<div id="listdiv">
+		<ul id="emtlist">
+			<li id="emptyLi">No EMTs have requested help</li>
+		<ul>
+	</div>
 	<div id="loader"></div>
-	<div id="call">
+	<!--<div id="call">
 		<div id="SkypeButton_Call_austin425_1"></div>
 		<p id="callHelp">Call the EMT. This will launch the Skype Desktop App and will require a personal Skype Account.
-	</div>
+	</div>-->
 	<div id="conversationWindow"></div>
 	<div class="iframeDiv">
-		<iframe id="fileTable" src="https://drive.google.com/embeddedfolderview?id=0B_Mq6umAVCRGdS1aLWdtV1ZTbEU#list" width="650" height="200"></iframe>
+		<iframe id="fileTable" src="https://drive.google.com/embeddedfolderview?id=0B_Mq6umAVCRGdS1aLWdtV1ZTbEU#list" width="650" height="300"></iframe>
 	</div>
 	<div class="tableBar">
 		<button id="refreshButton" onclick="refreshTable()">Refresh Table</button>
@@ -39,7 +45,6 @@
   <script type="text/javascript">
     var apiManager = null;
     var token = null;
-    var contactClient = null;
     var cfg = {
 	    wsHost: 'wss://481patientnet.com:3001'
     };
@@ -50,6 +55,7 @@
     var hostId = null;
     var meetingId = null;
     var googleApiKey = "AIzaSyBSb9EvtAm8Ntcj5-Rt4L-9gqMeJmMj7kA";
+    var webId = null;
 
     function refreshTable(){
 	var iframe = document.getElementById('fileTable');
@@ -59,9 +65,21 @@
 		iframe.src = tmp;
 	}, 200);
     }
+      
+    function endCall() {
+	    document.getElementById('conversationWindow').innerHTML = '';
+	    document.getElementById('emtlist').style.display = "block";
+	    document.getElementById('endCall').style.display = "none";
+      /*var divs = document.getElementById('conversationWindow').getElementsByTagName('div');
+      for (var i in divs) {
+      	document.getElementById('conversationWindow').removeChild(i);
+      }*/
+    }
 
     (function () {
-	document.getElementById("callHelp").style.display = "none";
+	if(!webId) {
+		webId = guid();
+	}
 	if (!location.href.includes("access_token")) {
 		location.assign(
 		    config.loginurl+
@@ -75,7 +93,13 @@
     	      wsc.onmessage = function(evt) {
 		      var signal = JSON.parse(evt.data);
 		      console.log("Server received message: " + signal.message);
-		      if(signal.type == 'sms') {
+		      if (signal.type == 'hello') {
+			var obj = {};
+			obj['type'] = 'hello';
+			obj['webId'] = webId;
+			console.log("Id: " + webId);
+			wsc.send(JSON.stringify(obj));
+		      } else if(signal.type == 'sms') {
 			var obj = {};
 			obj['type'] = 'sms';
 			obj['link'] = shortLink;
@@ -91,16 +115,19 @@
 		        wsc.send(JSON.stringify(obj));
 	      	      } else if (signal.type == 'request') {
 			      //skypeid = signal.skypeid;
-			      if(confirm("Would you want to accept a request from EMT with id: " + signal.skypeid + "?")) {
+			      addToList(signal.skypeid, signal.email, signal.number);
+			      /*if(confirm("Would you want to accept a request from EMT with id: " + signal.skypeid + "?")) {
 				SkypeUri.ui({
 					"name": "call",
 					"element": "SkypeButton_Call_austin425_1",
 					"participants": [signal.skypeid],
-					"imageSize": 32,
+					"imageSize": 24,
 				});
 				document.getElementById("callHelp").style.display = "block";
 				//window.open("https://481patientnet.com/doc.html?" + signal.skypeid + "#access_token=" + token, "_blank"); 
-			      }
+			      }*/
+		      } else if (signal.type == 'remove') {
+		      	      removeItem(signal.skypeid);
 		      }
 	    	};
 	      wsc.onclose = function() {
@@ -121,7 +148,89 @@
 	  } 
         }, this);
       }
-	
+
+      /*
+	 Add the skype username to list.
+      */
+      function addToList(emtName, email, smsNumber){
+      	var ul = document.getElementById('emtlist');
+	var li = document.createElement('li');
+	li.setAttribute('id', emtName);
+	li.innerHTML = emtName;
+	//Add styling to list item.
+	li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; cursor:pointer; display: block";
+	li.onmouseenter = function() {
+		this.style.backgroundColor = '#eee';
+	}
+	li.onmouseleave = function() {
+		this.style.backgroundColor = '#f6f6f6';
+	}
+	//Start Skype call and open anonymous meeting.
+	if (emtName != 'emptyLi') {
+	  li.onclick=(function(){
+		shortLink = null;
+		var callbackArgs = {
+			'email': email,
+			'sms': smsNumber,
+			'emtName': emtName
+		};
+		scheduleMeeting(callbackArgs, sendShortLink);	
+		window.location.href = "skype:"+emtName+"?call";
+		removeItem(emtName);
+		ul.style.display = "none";
+	  });
+	}
+	ul.appendChild(li);
+	if(ul.getElementsByTagName('li')[0].id == 'emptyLi'){
+		removeItem('emptyLi');
+	}
+      }
+
+      /*
+	 Remove the skype username from list.
+      */
+      function removeItem(emtName){
+	var ul = document.getElementById("emtlist");
+	var items = ul.getElementsByTagName('li');
+	for (var i=0; i < items.length; i++) {
+		var li = items[i];
+		console.log("id: " + li.id + " emt: " + emtName);
+		if (li.id == emtName){
+			console.log("Hello");
+			ul.removeChild(li);
+		}
+	}
+	ul = document.getElementById("emtlist");
+	items = ul.getElementsByTagName('li');
+	if (items.length == 0) {
+		var li = document.createElement('li');
+		li.setAttribute('id', 'emptyLi');
+		li.innerHTML = 'No EMTs have requested help';
+		//Add styling to list item.
+		li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; display: block";
+		ul.append(li);
+	}
+      }
+
+      /*
+	 Send a message to server with the shortlink to text or email.
+	 Exactly one of email or smsNumber will be null.
+      */
+      function sendShortLink(shortLink, email, smsNumber, emtName){
+	var obj = {};
+	obj['link'] = shortLink;
+	obj['skypeid'] = emtName;
+	if(email) {
+      		obj['email'] = email;
+		obj['type'] = 'email';
+	} else {
+		obj['number'] = smsNumber;
+		obj['type'] = 'sms';
+	}
+	console.log("Responded with: " + JSON.stringify(obj));
+	wsc.send(JSON.stringify(obj));	
+      }
+
       /*
       Grant app with Admin Consent
       *//*
@@ -146,7 +255,7 @@
               client.conversationsManager.conversations.added(function(conversation){
              
                 //Event handler : Get notified when conversation control receives an incoming call
-                /*conversation.selfParticipant.audio.state.changed(function (newValue, reason, oldValue) {
+                conversation.selfParticipant.audio.state.changed(function (newValue, reason, oldValue) {
                   // 'Notified' indicates that there is an incoming call
                   if(newValue === 'Notified') {
                     var person = conversation.participants(0).person;;
@@ -157,15 +266,15 @@
                             // This accepts an incoming call with audio
                             //conversation.audioService.accept();
                             // To accept an incoming call with video enabled call
-                            conversation.videoService.accept();
+                            conversation.audioService.accept();
 			    }, function(error){
                         }, 0);
                     } else {
                         // Reject the incoming call
-                        //conversation.audioService.reject();
+                        conversation.audioService.reject();
                     }
                   }
-		});*/
+		});
 	      });
       
       }
@@ -174,6 +283,15 @@
       On success, will login in the user to Sype as well by making a callback.
       */
       
+      function guid(){
+      	function s4() {
+		return Math.floor((1+ Math.random()) * 0x10000)
+			.toString(16)
+			.substring(1);
+	}
+	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+      }
+
       function skypeInit(_loginCallback) {
           Skype.initialize({apiKey:config.apiKeyCC},function(api){
               apiManager = api;
@@ -200,9 +318,11 @@
         };
         
         contactClient.signInManager.signIn(params).then(function(){
-          document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + '. Please wait for the emergency contact to join this meeting. Note that only audio calls are supported at this time.';
+          document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + '. The following is a list of EMTs who have requested help. Select one to start a Skype conversation with the EMT and create a chat room for the emergency contact to join.';
+	  document.getElementById('emtlist').style.display = "block";
+	  document.getElementById('loader').style.display = "none";
 	  //loadChat();
-	  scheduleMeeting();
+	  //scheduleMeeting();
         },function(error){
           console.log(error);
         });        
@@ -211,7 +331,7 @@
       /*
 	 Generate a short url with Google Url Shortener.
       */
-      function shortenUrl(longUrl) {	
+      function shortenUrl(longUrl, callbackArgs, _sendMessageCallback) {	
 	      var req = new XMLHttpRequest();
 	      req.open("POST", "https://www.googleapis.com/urlshortener/v1/url?key="+googleApiKey);
 	      req.setRequestHeader("Content-Type", "application/json");
@@ -220,6 +340,7 @@
 		      if(this.readyState == 4 && this.status == 200) {
 		      	console.log("Resp: " + req.responseText);
 			shortLink = JSON.parse(req.responseText).id;
+			_sendMessageCallback(shortLink, callbackArgs.email, callbackArgs.sms, callbackArgs.emtName);
 	      	      }
 	      }
       }
@@ -228,7 +349,8 @@
 	 scheduleMeeting creates a Meeting that allows anonymous users to join.
 	 It then renders the conversationsManager with the meeting.
       */
-      function scheduleMeeting() {
+      function scheduleMeeting(callbackArgs, _sendMessageCallback) {
+	document.getElementById("loader").style.display = "block";
       	var meeting = contactClient.conversationsManager.createMeeting()
 		.accessLevel("Everyone")
 		.subject("Test meeting")
@@ -240,7 +362,7 @@
 		var hostId = args[1];
 		var meetingId = args[args.length-1];
 		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId;
-		shortenUrl(longUrl);
+		shortenUrl(longUrl, callbackArgs, _sendMessageCallback);
 		var conversation = contactClient.conversationsManager.getConversationByUri(uri);
 		loadChat(conversation, null, "conversationWindow");
 	}); 
@@ -275,6 +397,9 @@
 		conversation.chatService.start();
 		//conversation.audioService.start();
 		//conversation.videoService.start();
+      		document.getElementById('emtlist').style.display = "none";
+          	document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + '. Please wait for the Emergency contact to join the call. Note that only audio calls are supported with the emergency contact at this time.';
+	  	document.getElementById('endCall').style.display = "block";
 	}, function(error) {
 		console.log("Error: " + error);
 	});
