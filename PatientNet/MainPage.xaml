@@ -87,12 +87,12 @@
         />
 
         <!-- Textbox for User Help -->
-        <Border BorderBrush="{x:Null}" Height="100" Margin="0,0,0,-75">
+        <Border BorderBrush="{x:Null}" Height="165" Margin="0,0,0,-75">
             <TextBlock 
                 x:Name="UserHelp"
                 Width="150"
                 TextWrapping="WrapWholeWords"
-                FontSize="15px"
+                FontSize="14px"
                 HorizontalAlignment="Center"
                 TextAlignment="Center"
                 Foreground="Black" 
@@ -112,12 +112,13 @@
                 HorizontalAlignment="Center"
                 Margin="-400,220,0,0"
                 VerticalAlignment="Top"
-                Width="220"
+                Width="210"
                 Click="PhoneClick"
                 PointerEntered="Phone_PointerEntered"
                 PointerExited="Help_PointerExited" >
                 <StackPanel>
-                    <Border CornerRadius="9" 
+                    <Border Margin="-4.7"
+                    CornerRadius="9" 
                     Background="LightSkyBlue" 
                     Opacity="0.78"
                     BorderBrush="SlateGray" 
@@ -138,12 +139,13 @@
                 HorizontalAlignment="Center"
                 Margin="400,220,0,0"
                 VerticalAlignment="Top"
-                Width="160"
+                Width="150"
                 Click="CallDoctorClick"
                 PointerEntered="SkypeName_PointerEntered"
                 PointerExited="Help_PointerExited">
                 <StackPanel>
-                    <Border CornerRadius="9" 
+                    <Border Margin="-4.7"
+                    CornerRadius="9" 
                     Background="LightSkyBlue" 
                     Opacity="0.78"
                     BorderBrush="SlateGray" 
@@ -162,16 +164,16 @@
                 x:Name="SelectPhone"
                 Background="Transparent"
                 HorizontalAlignment="Center"
-                Margin="-497,140.5,0,0"
+                Margin="-497,145.5,0,0"
                 VerticalAlignment="Top"
-                Width="125"
+                Width="115"
                 Click="PhoneSelected"
                 PointerEntered="Phone_PointerEntered"
                 PointerExited="Help_PointerExited" >
                 <StackPanel>
-                    <Border 
-                    Background="LightSkyBlue" 
-                    Opacity="0.78"
+                    <Border x:Name="SelectPhoneBackground"
+                    Margin="-4.7"
+                    Opacity="0.65"
                     BorderBrush="SlateGray" 
                         BorderThickness="1">
                         <TextBlock Text="Enter Phone" 
@@ -188,24 +190,24 @@
                 x:Name="SelectEmail"
                 Background="Transparent"
                 HorizontalAlignment="Center"
-                Margin="-297,140.5,0,0"
+                Margin="-297.5,145.5,0,0"
                 VerticalAlignment="Top"
-                Width="125"
+                Width="110"
                 Click="EmailSelected"
                 PointerEntered="Phone_PointerEntered"
                 PointerExited="Help_PointerExited" >
                 <StackPanel>
-                    <Border 
-                    Background="LightSkyBlue" 
-                    Opacity="0.78"
+                    <Border x:Name="SelectEmailBackground"
+                    Margin="-4.7"
+                    Opacity="0.65"
                     BorderBrush="SlateGray" 
                         BorderThickness="1">
                         <TextBlock Text="Enter Email" 
-                           Margin="10,6.5" 
+                           Margin= "10,6.5" 
                            Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
                     </Border>
-                </StackPanel>
-            </Button>
+            </StackPanel>
+        </Button>
         </StackPanel>
     </Grid>
 </Page>

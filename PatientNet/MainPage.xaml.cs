@@ -16,8 +16,10 @@
     using Windows.Graphics.Display;
     using Windows.Media.Capture;
     using Windows.System.Display;
+    using Windows.UI;
     using Windows.UI.Core;
     using Windows.UI.Xaml;
+    using Windows.UI.Xaml.Media;
     using Windows.UI.Xaml.Controls;
     using Windows.UI.Xaml.Input;
     using System.Net.Http;
@@ -369,6 +371,9 @@
             Phone.Text = string.Empty;
             Phone.IsEnabled = true;
 
+            SelectPhoneBackground.Background = new SolidColorBrush(Colors.WhiteSmoke);
+            SelectEmailBackground.Background = new SolidColorBrush(Colors.Transparent);
+
             InputScope scope = new InputScope();
             InputScopeName scopeName = new InputScopeName();
             scopeName.NameValue = InputScopeNameValue.TelephoneNumber;
@@ -383,6 +388,9 @@
             Phone.PlaceholderText = "johndoe@gmail.com";
             Phone.Text = string.Empty;
             Phone.IsEnabled = true;
+
+            SelectPhoneBackground.Background = new SolidColorBrush(Colors.Transparent);
+            SelectEmailBackground.Background = new SolidColorBrush(Colors.WhiteSmoke);
 
             InputScope scope = new InputScope();
             InputScopeName scopeName = new InputScopeName();
@@ -450,7 +458,7 @@
 
         private void Phone_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            UserHelp.Text = "Notify Emergency Contact sends a text to the specified number containing a link to the emergency contact PatientNet portal.";
+            UserHelp.Text = "Notify Emergency Contact sends a text or email to the specified number containing a link to the emergency contact PatientNet portal.";
         }
 
         private void SkypeName_PointerEntered(object sender, PointerRoutedEventArgs e)
