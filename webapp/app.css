@@ -104,7 +104,7 @@ h1 {
 }
 
 .footer {
-	  position: absolute;
+	  position: relative;
 	  background-color: #b3d1ff;
 	  bottom: 0;
           left: 0;

@@ -60,10 +60,7 @@
     function refreshTable(){
 	var iframe = document.getElementById('fileTable');
 	var tmp = iframe.src;
-	iframe.src = "https://drive.google.com";
-	setTimeout(function(){
-		iframe.src = tmp;
-	}, 200);
+	iframe.src = "https://481patientnet.com/blank.html?" + tmp;
     }
       
     function endCall() {
