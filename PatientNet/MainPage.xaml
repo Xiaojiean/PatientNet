@@ -29,23 +29,43 @@
             FontFamily="Arial Rounded MT Bold">  
             <Bold> PatientNet </Bold>
         </TextBlock>
-
+  
+        <!--
         <Image Source="Assets/PatientNet_Doctor_Pic.png" Width="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="630,0,0,120"/>
         <Image Source="Assets/PatientNet_Phone_Pic.png" Width="60" Margin="-680,0,0,120"/>
-
+        -->
+        
         <!-- Textbox to enter emergency contact phone number -->
         <!-- InputScope="TelephoneNumber" -->
         <TextBox 
-            x:Name="Phone" 
-            Background="Transparent" 
-            Width="200" 
-            PlaceholderText="(XXX)XXX-XXXX" 
-            HorizontalAlignment="Center" 
-            VerticalAlignment="Top" 
-            Foreground="SlateGray" 
-            Margin="-400,180,0,0" 
-            Height="32"          
-            IsEnabled="False" 
+            x:Name="Phone"
+            Background="Transparent"
+            Width="200"
+            Header="Enter Phone"
+            PlaceholderText="(XXX)XXX-XXXX"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Foreground="SlateGray"
+            Margin="0,150,0,0"
+            Height="60"
+            IsEnabled="False"
+            KeyDown="PhoneDownHandler"
+            TextChanged="PhoneTextChanged"
+            PointerEntered="Phone_PointerEntered"
+            PointerExited="Help_PointerExited"/>
+
+        <TextBox 
+            x:Name="Email"
+            Background="Transparent"
+            Width="200"
+            Header="Enter Email"
+            PlaceholderText="contact@example.com"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Foreground="SlateGray"
+            Margin="0,225,0,0"
+            Height="60"
+            IsEnabled="False"
             KeyDown="PhoneDownHandler"
             TextChanged="PhoneTextChanged"
             PointerEntered="Phone_PointerEntered"
@@ -61,7 +81,7 @@
             HorizontalAlignment="Center" 
             VerticalAlignment="Top" 
             Foreground="SlateGray" 
-            Margin="400,150,0,0" 
+            Margin="-500,150,0,0" 
             Height="62" 
             KeyDown="SkypeNameDownHandler"
             PointerEntered="SkypeName_PointerEntered"
@@ -69,6 +89,7 @@
         />
 
         <!-- Textbox for Notifications on Phone Number -->
+        <!--
         <TextBlock 
             x:Name="UserNotifications"
             Width="500"
@@ -85,8 +106,9 @@
             IsHoldingEnabled="False" 
             IsRightTapEnabled="False" 
         />
-
+        -->
         <!-- Textbox for User Help -->
+        <!--
         <Border BorderBrush="{x:Null}" Height="165" Margin="0,0,0,-75">
             <TextBlock 
                 x:Name="UserHelp"
@@ -103,8 +125,9 @@
                 IsRightTapEnabled="False" 
             />
         </Border>
-
+        -->
         <!-- Button to notify Emergency Contact -->
+        <!--
         <StackPanel>
             <Button
                 x:Name="CallContact"
@@ -130,6 +153,7 @@
                 </StackPanel>
             </Button>
         </StackPanel>
+        -->
 
         <!-- Button to notify Doctors -->
         <StackPanel>
@@ -137,7 +161,7 @@
                 x:Name="CallDoctors"
                 Background="Transparent"
                 HorizontalAlignment="Center"
-                Margin="400,220,0,0"
+                Margin="500,220,0,0"
                 VerticalAlignment="Top"
                 Width="150"
                 Click="CallDoctorClick"
@@ -159,6 +183,7 @@
         </StackPanel>
 
         <!-- Button to Select Phone -->
+        <!--
         <StackPanel>
             <Button
                 x:Name="SelectPhone"
@@ -183,8 +208,13 @@
                 </StackPanel>
             </Button>
         </StackPanel>
+        -->
 
+        <TextBlock Text="Enter Phone" Margin="10,6.5" Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
+        <TextBlock Text="Enter Email" Margin= "10,6.5" Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
+        
         <!-- Button to Select Email -->
+        <!--
         <StackPanel>
             <Button
                 x:Name="SelectEmail"
@@ -209,5 +239,6 @@
             </StackPanel>
         </Button>
         </StackPanel>
+        -->
     </Grid>
 </Page>
