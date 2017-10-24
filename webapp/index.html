@@ -9,6 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="./config.js"></script> <!-- setting file-->
   <script src="https://swx.cdn.skype.com/shared/v/1.2.15/SkypeBootstrap.min.js"></script><!--Skype Web SDK-->
+  <script src="https://static.filestackapi.com/v3/filestack.js"></script><!--Filepicker-->
   <link rel="stylesheet" href="app.css"><!--layout file-->
 </head>
 <body>
@@ -23,20 +24,25 @@
 	<div id="listdiv">
 		<ul id="emtlist">
 			<li id="emptyLi">No EMTs have requested help</li>
-		<ul>
+		</ul>
 	</div>
 	<div id="loader"></div>
-	<!--<div id="call">
-		<div id="SkypeButton_Call_austin425_1"></div>
-		<p id="callHelp">Call the EMT. This will launch the Skype Desktop App and will require a personal Skype Account.
-	</div>-->
 	<div id="conversationWindow"></div>
+	<!--
 	<div class="iframeDiv">
 		<iframe id="fileTable" src="https://drive.google.com/embeddedfolderview?id=0B_Mq6umAVCRGdS1aLWdtV1ZTbEU#list" width="650" height="300"></iframe>
 	</div>
 	<div class="tableBar">
 		<button id="refreshButton" onclick="refreshTable()">Refresh Table</button>
 	</div>
+	-->
+	<div id="filelistdiv">
+		<p id="filesHelp" style="display:none; text-align:center">View the files uploaded by the emergency contact. These will be deleted when you end the conversation.</p>
+		<ul id="fileslist">
+			<li id="emptyFileLi">No files have been uploaded</li>
+		</ul>
+	</div>
+	
     </div>
     <div class = "footer">
 	  <p>PatientNet - EECS 498</p>
@@ -56,6 +62,7 @@
     var meetingId = null;
     var googleApiKey = "AIzaSyBSb9EvtAm8Ntcj5-Rt4L-9gqMeJmMj7kA";
     var webId = null;
+    var fileHandles = [];
 
     function refreshTable(){
 	var iframe = document.getElementById('fileTable');
@@ -64,14 +71,59 @@
     }
       
     function endCall() {
-	    document.getElementById('conversationWindow').innerHTML = '';
-	    document.getElementById('emtlist').style.display = "block";
-	    document.getElementById('endCall').style.display = "none";
-      /*var divs = document.getElementById('conversationWindow').getElementsByTagName('div');
-      for (var i in divs) {
-      	document.getElementById('conversationWindow').removeChild(i);
-      }*/
+	    var end = confirm("Ending the conversation will close the Skype window and delete all uploaded files. Are you sure you want to end call?");
+	    if (end){
+	    	document.getElementById('conversationWindow').innerHTML = '';
+		document.getElementById('emtlist').style.display = "block";
+	    	document.getElementById('endCall').style.display = "none";
+		for(var i = 0; i < fileHandles.length; i++) {
+			removeItem(fileHandles[i], 'fileslist');
+			deleteFile(fileHandles[i]);
+		}
+		fileHandles = [];
+	    	document.getElementById('fileslist').style.display = "none";
+		document.getElementById('filesHelp').style.display = "none";
+	    }
     }
+      
+      /*
+	 Remove the skype username from list.
+      */
+      function removeItem(emtName, listname){
+	var ul = document.getElementById(listname);
+	var items = ul.getElementsByTagName('li');
+	for (var i=0; i < items.length; i++) {
+		var li = items[i];
+		console.log("id: " + li.id + " emt: " + emtName);
+		if (li.id == emtName){
+			ul.removeChild(li);
+		}
+	}
+	items = ul.getElementsByTagName('li');
+	if (items.length == 0) {
+		var li = document.createElement('li');
+		if (listname == 'emtlist') {
+			li.setAttribute('id', 'emptyLi');
+			li.innerHTML = 'No EMTs have requested help';
+		} else if (listname == 'fileslist') {
+			li.setAttribute('id', 'emptyFileLi');
+			li.innerHTML = 'No files have been uploaded';
+		}
+		//Add styling to list item.
+		li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; display: block";
+		ul.append(li);
+	}
+      }
+	
+var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.policy, signature: config.signature});
+      function openPreview(){
+		window.open("https://www.filestackapi.com/api/file/ucj7Ogw9TICOQnMjm8cS?signature="+config.signature+"&policy="+config.policy, "_blank");
+	}
+
+	function deleteFile(handle) {
+		deleteClient.remove(handle);
+		console.log("Removed file handle" + handle);
+	}
 
     (function () {
 	if(!webId) {
@@ -112,7 +164,7 @@
 		        wsc.send(JSON.stringify(obj));
 	      	      } else if (signal.type == 'request') {
 			      //skypeid = signal.skypeid;
-			      addToList(signal.skypeid, signal.email, signal.number);
+			      addToEmtList(signal.skypeid, signal.email, signal.number);
 			      /*if(confirm("Would you want to accept a request from EMT with id: " + signal.skypeid + "?")) {
 				SkypeUri.ui({
 					"name": "call",
@@ -124,7 +176,10 @@
 				//window.open("https://481patientnet.com/doc.html?" + signal.skypeid + "#access_token=" + token, "_blank"); 
 			      }*/
 		      } else if (signal.type == 'remove') {
-		      	      removeItem(signal.skypeid);
+		      	      removeItem(signal.skypeid, 'emtlist');
+		      } else if (signal.type == 'upload') {
+			      fileHandles.push(signal.handle);
+		      	      addToFileList(signal.filename, signal.handle);
 		      }
 	    	};
 	      wsc.onclose = function() {
@@ -149,7 +204,7 @@
       /*
 	 Add the skype username to list.
       */
-      function addToList(emtName, email, smsNumber){
+      function addToEmtList(emtName, email, smsNumber){
       	var ul = document.getElementById('emtlist');
 	var li = document.createElement('li');
 	li.setAttribute('id', emtName);
@@ -179,35 +234,39 @@
 	}
 	ul.appendChild(li);
 	if(ul.getElementsByTagName('li')[0].id == 'emptyLi'){
-		removeItem('emptyLi');
+		removeItem('emptyLi', 'emtlist');
 	}
+      }
+      
+      function addToFileList(fileName, handle){
+      	var ul = document.getElementById('fileslist');
+	if(ul.getElementsByTagName('li')[0].id == 'emptyFileLi'){
+		ul.removeChild(ul.getElementsByTagName('li')[0]);
+	}
+	var li = document.createElement('li');
+	li.setAttribute('id', handle);
+	li.innerHTML = fileName;
+	//Add styling to list item.
+	li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; cursor:pointer; display: block";
+	li.onmouseenter = function() {
+		this.style.backgroundColor = '#eee';
+	}
+	li.onmouseleave = function() {
+		this.style.backgroundColor = '#f6f6f6';
+	}
+	//Start Skype call and open anonymous meeting.
+	if (fileName != 'emptyFileLi') {
+	  li.onclick=(function(){
+		window.open("https://www.filestackapi.com/api/file/" + handle + "?signature="+config.signature+"&policy="+config.policy, "_blank");
+	  });
+	}
+	ul.appendChild(li);
+	/*
+	if(ul.getElementsByTagName('li')[0].id == 'emptyLi'){
+		removeItem('emptyFileLi', 'fileslist');
+	}*/
       }
 
-      /*
-	 Remove the skype username from list.
-      */
-      function removeItem(emtName){
-	var ul = document.getElementById("emtlist");
-	var items = ul.getElementsByTagName('li');
-	for (var i=0; i < items.length; i++) {
-		var li = items[i];
-		console.log("id: " + li.id + " emt: " + emtName);
-		if (li.id == emtName){
-			console.log("Hello");
-			ul.removeChild(li);
-		}
-	}
-	ul = document.getElementById("emtlist");
-	items = ul.getElementsByTagName('li');
-	if (items.length == 0) {
-		var li = document.createElement('li');
-		li.setAttribute('id', 'emptyLi');
-		li.innerHTML = 'No EMTs have requested help';
-		//Add styling to list item.
-		li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; display: block";
-		ul.append(li);
-	}
-      }
 
       /*
 	 Send a message to server with the shortlink to text or email.
@@ -217,6 +276,7 @@
 	var obj = {};
 	obj['link'] = shortLink;
 	obj['skypeid'] = emtName;
+	obj['webId'] = webId;
 	if(email) {
       		obj['email'] = email;
 		obj['type'] = 'email';
@@ -358,7 +418,7 @@
 		var args = uri.split(/[@:]+/);
 		var hostId = args[1];
 		var meetingId = args[args.length-1];
-		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId;
+		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId + "&docId=" + webId;
 		shortenUrl(longUrl, callbackArgs, _sendMessageCallback);
 		var conversation = contactClient.conversationsManager.getConversationByUri(uri);
 		loadChat(conversation, null, "conversationWindow");
@@ -390,6 +450,8 @@
 		//Rendered successfully
 		//Remove loader.
 		document.getElementById("loader").style.display = "none";
+		document.getElementById("fileslist").style.display = "block";
+		document.getElementById("filesHelp").style.display = "block";
 
 		conversation.chatService.start();
 		//conversation.audioService.start();

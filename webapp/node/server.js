@@ -78,7 +78,7 @@ app.post('/api/v1/requestdoctor', function(req, res) {
 	res.status(200).send("OK");
 });
 
-function emtAccepted(emtId) {
+function emtAccepted(emtId, webId) {
 	for(var i = emts.length - 1; i >= 0; i--) {
 		if (emts[i].skypeid == emtId) {
 			emts.splice(i, 1);
@@ -105,6 +105,19 @@ function sendMessage(obj){
 			cli.send(JSON.stringify(obj));
 		}
 	}
+}
+
+function sendMessageToWeb(obj, id) {
+	for (var key in wsClients) {
+		if (key == id){	
+			var cli = wsClients[key];
+			if(cli.readyState == cli.OPEN) {
+				console.log("Sending obj: " + JSON.stringify(obj) + " to key: " + key);
+				cli.send(JSON.stringify(obj));
+			}
+		}
+	}
+	
 }
 
 //Check if clients are open, if not, remove them from dictionary.
@@ -145,7 +158,7 @@ wss.on('connection', function(client) {
 				client.send(JSON.stringify(emts[i]));
 			}
 		} else if(msg.type == 'sms'){
-			emtAccepted(msg.skypeid);
+			emtAccepted(msg.skypeid, msg.webId);
 			twilioClient.messages.create({
 				to: "+1" + msg.number,
 				from: "+12062026089",
@@ -157,10 +170,17 @@ wss.on('connection', function(client) {
 		
 			});
 		} else if (msg.type == 'email') {
-			emtAccepted(msg.skypeid);
+			emtAccepted(msg.skypeid, msg.webId);
 			emailMsg.to = msg.email;
 			emailMsg.text = emailBody + msg.link;
 			sgMail.send(emailMsg);
+		} else if (msg.type == 'upload') {
+			var payload = {};
+			payload['type'] = 'upload';
+			payload['filename'] = msg.filename;
+			payload['handle'] = msg.handle;
+			payload['message'] = JSON.stringify(msg);
+			sendMessageToWeb(payload, msg.docId);
 		}
 	});
 });
