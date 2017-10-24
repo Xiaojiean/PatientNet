@@ -29,11 +29,11 @@
             FontFamily="Arial Rounded MT Bold">  
             <Bold> PatientNet </Bold>
         </TextBlock>
-  
-        <!--
-        <Image Source="Assets/PatientNet_Doctor_Pic.png" Width="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="630,0,0,120"/>
-        <Image Source="Assets/PatientNet_Phone_Pic.png" Width="60" Margin="-680,0,0,120"/>
-        -->
+
+
+        <Image Source="Assets/PatientNet_Doctor_Pic.png" Width="60" Height="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="18,151,775,268"/>
+        <Image Source="Assets/PatientNet_Phone_Pic.png" Width="60" Height="60" Margin="282,108,511,312"/>
+        <Image Source="Assets/PatientNet_Email_Pic.png" Width="60" Height="60" Margin="284,205,509,215"/>
         
         <!-- Textbox to enter emergency contact phone number -->
         <!-- InputScope="TelephoneNumber" -->
@@ -46,13 +46,13 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Top"
             Foreground="SlateGray"
-            Margin="0,150,0,0"
+            Margin="353,110,300,0"
             Height="60"
-            IsEnabled="False"
+            IsEnabled="True"
             KeyDown="PhoneDownHandler"
             TextChanged="PhoneTextChanged"
             PointerEntered="Phone_PointerEntered"
-            PointerExited="Help_PointerExited"/>
+            PointerExited="Phone_PointerExited"/>
 
         <TextBox 
             x:Name="Email"
@@ -63,13 +63,13 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Top"
             Foreground="SlateGray"
-            Margin="0,225,0,0"
+            Margin="353,200,300,0"
             Height="60"
-            IsEnabled="False"
+            IsEnabled="True"
             KeyDown="PhoneDownHandler"
             TextChanged="PhoneTextChanged"
             PointerEntered="Phone_PointerEntered"
-            PointerExited="Help_PointerExited"/>
+            PointerExited="Phone_PointerExited"/>
 
         <!-- Textbox to enter EMT's skype name -->
         <TextBox 
@@ -81,51 +81,69 @@
             HorizontalAlignment="Center" 
             VerticalAlignment="Top" 
             Foreground="SlateGray" 
-            Margin="-500,150,0,0" 
+            Margin="-530,150,0,0" 
             Height="62" 
             KeyDown="SkypeNameDownHandler"
             PointerEntered="SkypeName_PointerEntered"
-            PointerExited="Help_PointerExited"
+            PointerExited="SkypeName_PointerExited"
         />
 
         <!-- Textbox for Notifications on Phone Number -->
-        <!--
         <TextBlock 
             x:Name="UserNotifications"
-            Width="500"
+            Width="200"
             TextWrapping="WrapWholeWords"
             FontSize="20px"
             HorizontalAlignment="Center" 
             VerticalAlignment="Center"
             TextAlignment="Center"
             Foreground="Black" 
-            Margin="0,175,0,0" 
-            Height="70" 
+            Margin="500,275,0,0" 
+            Height="170" 
             IsDoubleTapEnabled="False" 
             IsTapEnabled="False" 
             IsHoldingEnabled="False" 
             IsRightTapEnabled="False" 
         />
-        -->
-        <!-- Textbox for User Help -->
-        <!--
-        <Border BorderBrush="{x:Null}" Height="165" Margin="0,0,0,-75">
+
+        <!-- Textbox for User Help for entering Skype Name-->
+        <Border BorderBrush="{x:Null}" Height="165" Width="150" Margin="102,284,601,31">
             <TextBlock 
-                x:Name="UserHelp"
+                x:Name="UserHelpSkype"
                 Width="150"
                 TextWrapping="WrapWholeWords"
                 FontSize="14px"
                 HorizontalAlignment="Center"
                 TextAlignment="Center"
                 Foreground="Black" 
-                Margin="352,-70,351.333,70"
+                Margin="99,0,604.333,-2.667"
                 IsDoubleTapEnabled="False"
                 IsTapEnabled="False"
                 IsHoldingEnabled="False"
                 IsRightTapEnabled="False" 
             />
         </Border>
-        -->
+        <!-- SelectionChanged="UserHelp_SelectionChanged" -->
+
+        <!-- Textbox for User Help for entering Phone Number / Email -->
+        <Border BorderBrush="{x:Null}" Height="165" Width="150" Margin="350,284,601,31">
+            <TextBlock 
+                x:Name="UserHelpText"
+                Width="150"
+                TextWrapping="WrapWholeWords"
+                FontSize="14px"
+                HorizontalAlignment="Center"
+                TextAlignment="Center"
+                Foreground="Black" 
+                Margin="99,0,604.333,-2.667"
+                IsDoubleTapEnabled="False"
+                IsTapEnabled="False"
+                IsHoldingEnabled="False"
+                IsRightTapEnabled="False" 
+            />
+        </Border>
+        <!-- SelectionChanged="UserHelp_SelectionChanged"  -->
+        
         <!-- Button to notify Emergency Contact -->
         <!--
         <StackPanel>
@@ -161,12 +179,12 @@
                 x:Name="CallDoctors"
                 Background="Transparent"
                 HorizontalAlignment="Center"
-                Margin="500,220,0,0"
+                Margin="550,180,0,0"
                 VerticalAlignment="Top"
                 Width="150"
                 Click="CallDoctorClick"
                 PointerEntered="SkypeName_PointerEntered"
-                PointerExited="Help_PointerExited">
+                PointerExited="SkypeName_PointerExited">
                 <StackPanel>
                     <Border Margin="-4.7"
                     CornerRadius="9" 
@@ -174,7 +192,7 @@
                     Opacity="0.78"
                     BorderBrush="SlateGray" 
                     BorderThickness="1">
-                        <TextBlock Text="Notify All Doctors" 
+                        <TextBlock Text="Request Doctors" 
                            Margin="10,6.5" 
                            Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
                     </Border>
@@ -209,10 +227,10 @@
             </Button>
         </StackPanel>
         -->
-
+        <!--
         <TextBlock Text="Enter Phone" Margin="10,6.5" Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
         <TextBlock Text="Enter Email" Margin= "10,6.5" Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
-        
+        -->
         <!-- Button to Select Email -->
         <!--
         <StackPanel>

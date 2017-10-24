@@ -61,6 +61,10 @@
             this.InitializeComponent();
             this.SentRequest += this.OnRequestSent;
             Application.Current.Suspending += Application_Suspending;
+            /*
+            PhonePic.Visibility = Visibility.Visible;
+            EmailPic.Visibility = Visibility.Collapsed;
+            */
         }
 
         /// <summary>
@@ -371,8 +375,13 @@
             Phone.Text = string.Empty;
             Phone.IsEnabled = true;
 
+            /*
+            PhonePic.Visibility = Visibility.Visible;
+            EmailPic.Visibility = Visibility.Collapsed;
+
             SelectPhoneBackground.Background = new SolidColorBrush(Colors.WhiteSmoke);
             SelectEmailBackground.Background = new SolidColorBrush(Colors.Transparent);
+            */
 
             InputScope scope = new InputScope();
             InputScopeName scopeName = new InputScopeName();
@@ -389,8 +398,13 @@
             Phone.Text = string.Empty;
             Phone.IsEnabled = true;
 
+            /*
+            PhonePic.Visibility = Visibility.Collapsed;
+            EmailPic.Visibility = Visibility.Visible;
+
             SelectPhoneBackground.Background = new SolidColorBrush(Colors.Transparent);
             SelectEmailBackground.Background = new SolidColorBrush(Colors.WhiteSmoke);
+            */
 
             InputScope scope = new InputScope();
             InputScopeName scopeName = new InputScopeName();
@@ -458,17 +472,23 @@
 
         private void Phone_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            UserHelp.Text = "Notify Emergency Contact sends a text or email to the specified number containing a link to the emergency contact PatientNet portal.";
+            // UserHelpText.Text = "Notify Emergency Contact sends a text or email to the specified number containing a link to the emergency contact PatientNet portal.";
+            UserHelpText.Text = "Please enter either the emergency contact's phone number or email address (or both). A text or email to the specified number containing a link to the emergency contact PatientNet portal.";
+        }
+
+        private void Phone_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            UserHelpText.Text = string.Empty;
         }
 
         private void SkypeName_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            UserHelp.Text = "Notify All Doctors sends a notification to all available doctors. The doctors will video call you via the provided Skype name.";
+            UserHelpSkype.Text = "Please enter the Skype Name associated with this Hololens.";
         }
 
-        private void Help_PointerExited(object sender, PointerRoutedEventArgs e)
+        private void SkypeName_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            UserHelp.Text = string.Empty;
+            UserHelpSkype.Text = string.Empty;
         }
     }
 }
