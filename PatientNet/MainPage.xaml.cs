@@ -46,6 +46,7 @@
 
         private Logger logger = new Logger();
         private HashSet<string> numbersSentTo = new HashSet<string>();
+        private HashSet<string> emailsSentTo = new HashSet<string>();
         private HashSet<string> skypesSentTo = new HashSet<string>();
 
         private delegate void SendRequestEventHandler(object sender, RequestEventArgs e);
@@ -167,7 +168,7 @@
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                PhoneClick(sender, e);
+                //PhoneClick(sender, e);
             }
         }
 
@@ -182,7 +183,7 @@
         /// <summary>
         /// Used to send phone numbers and skype names
         /// </summary>
-        private async void SendHTTP(string message, string endpoint, MessageType type)
+        private async void SendHTTP(string message, string endpoint, MessageType type) // TODO: NEED TO CHANGE SendHTTP INTERFACE
         {
             if (string.IsNullOrWhiteSpace(message))
             {
@@ -259,12 +260,26 @@
             this.logger.Log($"Removed {e.Content} from {nameof(e.Set)}");
         }
 
-        private void PhoneClick(object sender, RoutedEventArgs e)
+        private void ButtonClick(object sender, RoutedEventArgs e)
         {
-            if (input == MessageType.Number)
+            if (SkypeName.Text == String.Empty)
             {
-                string phoneNumber = Phone.Text;
+                NotifyUser("Please enter a skype name.");
+                return;
+            }
+            if (Phone.Text == String.Empty && Email.Text == String.Empty)
+            {
+                NotifyUser($"Please enter a phone number and/or email address.");
+                return;
+            }
 
+            string phoneNumber = Phone.Text;
+            string email = Email.Text;
+            string skypeName = SkypeName.Text;
+
+            // Handling Phone Number
+            if (phoneNumber != String.Empty)
+            {
                 if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length != MainPage.FormattedPhoneLength)
                 {
                     NotifyUser($"Invalid Number. Please try again.");
@@ -280,44 +295,50 @@
                 // Add phone number to set of numbers
                 this.logger.Log($"Adding {phoneNumber} to {this.numbersSentTo}");
                 SentRequest.Invoke(this, new RequestEventArgs(this.numbersSentTo, phoneNumber));
-
-                try
-                {
-                    string parsedPhoneNumber = string.Format("{0}{1}{2}", phoneNumber.Substring(1, 3),
-                        phoneNumber.Substring(5, 3), phoneNumber.Substring(9, 4));
-                    string endpoint = SendSmsEndpoint;
-                    SendHTTP(parsedPhoneNumber, endpoint, MessageType.Number);
-                }
-                catch (Exception ex)
-                {
-                    this.logger.Log($"Error: when notifying contact, got exception: {ex.Message}");
-                    NotifyUser($"Error notifying contact: {ex.Message}");
-                }
             }
-            else if (input == MessageType.Email)
-            {
-                string email = Phone.Text;
 
+            // Handling Email
+            if (email != String.Empty)
+            {
                 if (string.IsNullOrWhiteSpace(email))
                 {
                     NotifyUser($"Invalid Email. Please try again.");
                     return;
                 }
 
-                try
-                {
-                    string endpoint = SendEmailEndpoint;
-                    SendHTTP(email, endpoint, MessageType.Email);
-                }
-                catch (Exception ex)
-                {
-                    this.logger.Log($"Error: when notifying contact, got exception: {ex.Message}");
-                    NotifyUser($"Error notifying contact: {ex.Message}");
-                }
+                // Add email to set of emails
+                this.logger.Log($"Adding {phoneNumber} to {this.emailsSentTo}");
+                SentRequest.Invoke(this, new RequestEventArgs(this.emailsSentTo, phoneNumber));
             }
-            else
+
+            // Handling Skype Name
+            if (string.IsNullOrWhiteSpace(skypeName))
             {
+                this.logger.Log($"Got null or empty skype name. Skipping.");
+                NotifyUser("Please enter a skype name.");
                 return;
+            }
+
+            if (this.skypesSentTo.Contains(skypeName))
+            {
+                this.logger.Log($"Recently sent to {skypeName}. Skipping.");
+                return;  // Don't do anything
+            }
+
+            // Add skype name to set of skypes
+            this.logger.Log($"Adding {skypeName} to {nameof(this.skypesSentTo)}");
+            SentRequest.Invoke(this, new RequestEventArgs(this.skypesSentTo, skypeName));
+
+            // Sending HTTP Request containing all non-empty parameters
+            try
+            {
+                string endpoint = RequestDoctorsEndpoint;
+                SendHTTP(email, endpoint, MessageType.Email); // TODO: NEED TO CHANGE SendHTTP INTERFACE
+            }
+            catch (Exception ex)
+            {
+                this.logger.Log($"Error: when notifying contact, got exception: {ex.Message}");
+                NotifyUser($"Error notifying contact: {ex.Message}");
             }
         }
 

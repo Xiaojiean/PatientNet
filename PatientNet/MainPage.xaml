@@ -88,7 +88,7 @@
             PointerExited="SkypeName_PointerExited"
         />
 
-        <!-- Textbox for Notifications on Phone Number -->
+        <!-- Textbox for Notifications for Button -->
         <TextBlock 
             x:Name="UserNotifications"
             Width="200"
@@ -182,7 +182,7 @@
                 Margin="550,180,0,0"
                 VerticalAlignment="Top"
                 Width="150"
-                Click="CallDoctorClick"
+                Click="ButtonClick"
                 PointerEntered="SkypeName_PointerEntered"
                 PointerExited="SkypeName_PointerExited">
                 <StackPanel>
