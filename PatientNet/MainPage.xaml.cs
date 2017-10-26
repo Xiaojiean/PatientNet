@@ -176,19 +176,22 @@
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                CallDoctorClick(sender, e);
+                // CallDoctorClick(sender, e);
             }
         }
 
         /// <summary>
         /// Used to send phone numbers and skype names
         /// </summary>
-        private async void SendHTTP(string message, string endpoint, MessageType type) // TODO: NEED TO CHANGE SendHTTP INTERFACE
+        // private async void SendHTTP(string message, string endpoint, MessageType type) // TODO: NEED TO CHANGE SendHTTP INTERFACE
+        private async void SendHTTP(string endpoint, Dictionary<MessageType, string> sendTypes)
         {
+            /*
             if (string.IsNullOrWhiteSpace(message))
             {
                 throw new ArgumentNullException(nameof(message));
             }
+            */
 
             if (string.IsNullOrWhiteSpace(endpoint))
             {
@@ -198,6 +201,10 @@
             HttpClient httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
             string content_type = "application/json";
+            string title = "Request Doctors";
+            string success_message = "Successfully Notified Emergency Contact and Doctors";
+
+            /*
             string key = null;              // Key to send to API
             string title = null;            // Title of popup
             string success_message = null;  // Message to print on success
@@ -222,13 +229,35 @@
                 default:
                     throw new ArgumentException("Invalid message type.");
             }
+            */
 
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(content_type));
             httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
 
             try
             {
-                string info = $"{{ \"{key}\": \"{message}\" }}";
+                string info = String.Empty;
+
+                if (sendTypes.Count == 2)
+                {
+                    if (sendTypes.ContainsKey(MessageType.Email))
+                    {
+                        info = $"{{ \"{"email"}\": \"{sendTypes[MessageType.Email]}\" \"{"skypeid"}\": \"{MessageType.Skype}\" }}";
+                    }
+                    else
+                    {
+                        info = $"{{ \"{"number"}\": \"{sendTypes[MessageType.Number]}\" \"{"skypeid"}\": \"{MessageType.Skype}\" }}";
+                    }
+                }
+                else if (sendTypes.Count == 3)
+                {
+                    info = $"{{ \"{"number"}\": \"{sendTypes[MessageType.Number]}\" \"{"email"}\": \"{sendTypes[MessageType.Email]}\" \"{"skypeid"}\": \"{MessageType.Skype}\" }}";
+                }
+                else
+                {
+                    return;
+                }
+
                 var serialized = JsonConvert.SerializeObject(info);
                 HttpContent content = new StringContent(info, Encoding.UTF8, content_type);
                 this.logger.Log("Sending " + info + " to " + endpoint);
@@ -276,6 +305,7 @@
             string phoneNumber = Phone.Text;
             string email = Email.Text;
             string skypeName = SkypeName.Text;
+            Dictionary<MessageType, string> sendTypes = new Dictionary<MessageType, string>();
 
             // Handling Phone Number
             if (phoneNumber != String.Empty)
@@ -295,6 +325,7 @@
                 // Add phone number to set of numbers
                 this.logger.Log($"Adding {phoneNumber} to {this.numbersSentTo}");
                 SentRequest.Invoke(this, new RequestEventArgs(this.numbersSentTo, phoneNumber));
+                sendTypes.Add(MessageType.Number, phoneNumber);
             }
 
             // Handling Email
@@ -307,8 +338,9 @@
                 }
 
                 // Add email to set of emails
-                this.logger.Log($"Adding {phoneNumber} to {this.emailsSentTo}");
-                SentRequest.Invoke(this, new RequestEventArgs(this.emailsSentTo, phoneNumber));
+                this.logger.Log($"Adding {email} to {this.emailsSentTo}");
+                SentRequest.Invoke(this, new RequestEventArgs(this.emailsSentTo, email));
+                sendTypes.Add(MessageType.Email, email);
             }
 
             // Handling Skype Name
@@ -328,12 +360,13 @@
             // Add skype name to set of skypes
             this.logger.Log($"Adding {skypeName} to {nameof(this.skypesSentTo)}");
             SentRequest.Invoke(this, new RequestEventArgs(this.skypesSentTo, skypeName));
+            sendTypes.Add(MessageType.Skype, skypeName);
 
             // Sending HTTP Request containing all non-empty parameters
             try
             {
                 string endpoint = RequestDoctorsEndpoint;
-                SendHTTP(email, endpoint, MessageType.Email); // TODO: NEED TO CHANGE SendHTTP INTERFACE
+                SendHTTP(endpoint, sendTypes); // TODO: NEED TO CHANGE SendHTTP INTERFACE
             }
             catch (Exception ex)
             {
@@ -342,6 +375,7 @@
             }
         }
 
+        /*
         private void CallDoctorClick(object sender, RoutedEventArgs e)
         {
             string skypeName = SkypeName.Text;
@@ -364,19 +398,7 @@
             SentRequest.Invoke(this, new RequestEventArgs(this.skypesSentTo, skypeName));
 
             try
-            {
-                /*const string skypeNamePrefix = "sip:";
-                const string skypeNameSuffix = "@skypeids.net";
-
-                (if (!skypeName.StartsWith(skypeNamePrefix))
-                {
-                    skypeName = skypeNamePrefix + skypeName;
-                }
-                if (!skypeName.EndsWith(skypeNameSuffix))
-                {
-                    skypeName += skypeNameSuffix;
-                }*/
-
+            { 
                 string endpoint = RequestDoctorsEndpoint;
                 SendHTTP(skypeName, endpoint, MessageType.Skype);
             }
@@ -387,6 +409,7 @@
                 return;
             }
         }
+        */
 
         private void PhoneSelected(object sender, RoutedEventArgs e)
         {

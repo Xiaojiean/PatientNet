@@ -66,8 +66,6 @@
             Margin="353,200,300,0"
             Height="60"
             IsEnabled="True"
-            KeyDown="PhoneDownHandler"
-            TextChanged="PhoneTextChanged"
             PointerEntered="Phone_PointerEntered"
             PointerExited="Phone_PointerExited"/>
 
