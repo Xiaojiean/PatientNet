@@ -35,7 +35,7 @@
     {
         MediaCapture _mediaCapture;
         DisplayRequest _displayRequest = new DisplayRequest();
-        bool _isPreviewing;
+        // bool _isPreviewing;
         MessageType input;
 
         private const int FormattedPhoneLength = 13;
@@ -61,13 +61,10 @@
         {
             this.InitializeComponent();
             this.SentRequest += this.OnRequestSent;
-            Application.Current.Suspending += Application_Suspending;
-            /*
-            PhonePic.Visibility = Visibility.Visible;
-            EmailPic.Visibility = Visibility.Collapsed;
-            */
+            //Application.Current.Suspending += Application_Suspending;
         }
 
+        /*
         /// <summary>
         /// 
         /// </summary>
@@ -105,9 +102,11 @@
 
             try
             {
+                
                 PreviewControl.Source = _mediaCapture;
                 await _mediaCapture.StartPreviewAsync();
                 _isPreviewing = true;
+                
             }
             catch (System.IO.FileLoadException)
             {
@@ -118,6 +117,7 @@
 
         private async void _mediaCapture_CaptureDeviceExclusiveControlStatusChanged(MediaCapture sender, MediaCaptureDeviceExclusiveControlStatusChangedEventArgs args)
         {
+            
             if (args.Status == MediaCaptureDeviceExclusiveControlStatus.SharedReadOnlyAvailable)
             {
                 this.logger.Log("The camera preview can't be displayed because another app has exclusive access");
@@ -129,17 +129,19 @@
                     await StartPreviewAsync();
                 });
             }
+            
         }
-
+ 
         private async Task CleanupCameraAsync()
         {
             if (_mediaCapture != null)
             {
+                /*
                 if (_isPreviewing)
                 {
                     await _mediaCapture.StopPreviewAsync();
                 }
-
+                
                 await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
                     PreviewControl.Source = null;
@@ -151,6 +153,7 @@
                     _mediaCapture.Dispose();
                     _mediaCapture = null;
                 });
+                
             }
         }
 
@@ -163,36 +166,37 @@
         {
             await CleanupCameraAsync();
         }
+        */
+        private void SkypeDownHandler(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                //TODO: Why doesn't it go to Phone??
+                Phone.Focus(FocusState.Pointer);
+            }
+        }
 
         private void PhoneDownHandler(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                //PhoneClick(sender, e);
+                Email.Focus(FocusState.Pointer);
             }
         }
 
-        private void SkypeNameDownHandler(object sender, KeyRoutedEventArgs e)
+        private void EmailDownHandler(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                // CallDoctorClick(sender, e);
+                ButtonClick(sender, e);
             }
         }
 
         /// <summary>
         /// Used to send phone numbers and skype names
         /// </summary>
-        // private async void SendHTTP(string message, string endpoint, MessageType type) // TODO: NEED TO CHANGE SendHTTP INTERFACE
         private async void SendHTTP(string endpoint, Dictionary<MessageType, string> sendTypes)
         {
-            /*
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-            */
-
             if (string.IsNullOrWhiteSpace(endpoint))
             {
                 throw new ArgumentNullException(nameof(endpoint));
@@ -204,54 +208,33 @@
             string title = "Request Doctors";
             string success_message = "Successfully Notified Emergency Contact and Doctors";
 
-            /*
-            string key = null;              // Key to send to API
-            string title = null;            // Title of popup
-            string success_message = null;  // Message to print on success
-
-            switch (type)
-            {
-                case MessageType.Number:
-                    key = "number";
-                    title = "Notify Emergency Contact";
-                    success_message = $"Successfully sent SMS to {PhoneNumberFormatter(message)}.";
-                    break;
-                case MessageType.Email:
-                    key = "email";
-                    title = "Notify Emergency Contact";
-                    success_message = $"Successfully sent email to {message}.";
-                    break;
-                case MessageType.Skype:
-                    key = "skypeid";
-                    title = "Notify All Doctors";
-                    success_message = "Successfully notified doctors! A doctor will initiate a Skype call soon.";
-                    break;
-                default:
-                    throw new ArgumentException("Invalid message type.");
-            }
-            */
-
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(content_type));
             httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
-
+            
             try
             {
                 string info = String.Empty;
+                string emailString = "email";
+                string skypeString = "skypeid";
+                string numberString = "number";
 
                 if (sendTypes.Count == 2)
                 {
                     if (sendTypes.ContainsKey(MessageType.Email))
                     {
-                        info = $"{{ \"{"email"}\": \"{sendTypes[MessageType.Email]}\" \"{"skypeid"}\": \"{MessageType.Skype}\" }}";
+                        info = $"{{ \"{emailString}\": \"{sendTypes[MessageType.Email]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
                     }
                     else
                     {
-                        info = $"{{ \"{"number"}\": \"{sendTypes[MessageType.Number]}\" \"{"skypeid"}\": \"{MessageType.Skype}\" }}";
+                        info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
                     }
                 }
                 else if (sendTypes.Count == 3)
                 {
-                    info = $"{{ \"{"number"}\": \"{sendTypes[MessageType.Number]}\" \"{"email"}\": \"{sendTypes[MessageType.Email]}\" \"{"skypeid"}\": \"{MessageType.Skype}\" }}";
+                    // TODO: This will accept all 3 parameters, depending on if both email and phone are provided
+                    //          Server does not yet allow this - it specifies ONE OR THE OTHER - so just choosing number for now
+                    info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                    // info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{emailString}\": \"{sendTypes[MessageType.Email]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
                 }
                 else
                 {
@@ -283,7 +266,8 @@
         {
             e.Set.Add(e.Content);
 
-            await Task.Delay(MainPage.SendSleepTimeInMilliseconds);  // Disallow sending again for 5 seconds
+            // Disallow sending again for 5 seconds
+            await Task.Delay(MainPage.SendSleepTimeInMilliseconds);
 
             e.Set.Remove(e.Content);
             this.logger.Log($"Removed {e.Content} from {nameof(e.Set)}");
@@ -375,42 +359,6 @@
             }
         }
 
-        /*
-        private void CallDoctorClick(object sender, RoutedEventArgs e)
-        {
-            string skypeName = SkypeName.Text;
-
-            if (string.IsNullOrWhiteSpace(skypeName))
-            {
-                this.logger.Log($"Got null or empty skype name. Skipping.");
-                NotifyUser("Please enter a skype name.");
-                return;
-            }
-
-            if (this.skypesSentTo.Contains(skypeName))
-            {
-                this.logger.Log($"Recently sent to {skypeName}. Skipping.");
-                return;  // Don't do anything
-            }
-
-            // Add skype name to set of skypes
-            this.logger.Log($"Adding {skypeName} to {nameof(this.skypesSentTo)}");
-            SentRequest.Invoke(this, new RequestEventArgs(this.skypesSentTo, skypeName));
-
-            try
-            { 
-                string endpoint = RequestDoctorsEndpoint;
-                SendHTTP(skypeName, endpoint, MessageType.Skype);
-            }
-            catch (Exception ex)
-            {
-                this.logger.Log($"Error: When requesting doctors, got exception: {ex.Message}");
-                NotifyUser($"Error requesting doctors: {ex.Message}");
-                return;
-            }
-        }
-        */
-
         private void PhoneSelected(object sender, RoutedEventArgs e)
         {
             input = MessageType.Number;
@@ -418,14 +366,6 @@
             Phone.PlaceholderText = "(XXX)XXX-XXXX";
             Phone.Text = string.Empty;
             Phone.IsEnabled = true;
-
-            /*
-            PhonePic.Visibility = Visibility.Visible;
-            EmailPic.Visibility = Visibility.Collapsed;
-
-            SelectPhoneBackground.Background = new SolidColorBrush(Colors.WhiteSmoke);
-            SelectEmailBackground.Background = new SolidColorBrush(Colors.Transparent);
-            */
 
             InputScope scope = new InputScope();
             InputScopeName scopeName = new InputScopeName();
@@ -441,14 +381,6 @@
             Phone.PlaceholderText = "johndoe@gmail.com";
             Phone.Text = string.Empty;
             Phone.IsEnabled = true;
-
-            /*
-            PhonePic.Visibility = Visibility.Collapsed;
-            EmailPic.Visibility = Visibility.Visible;
-
-            SelectPhoneBackground.Background = new SolidColorBrush(Colors.Transparent);
-            SelectEmailBackground.Background = new SolidColorBrush(Colors.WhiteSmoke);
-            */
 
             InputScope scope = new InputScope();
             InputScopeName scopeName = new InputScopeName();
