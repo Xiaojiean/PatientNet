@@ -30,13 +30,11 @@
             <Bold> PatientNet </Bold>
         </TextBlock>
 
-        <Image Source="Assets/PatientNet_Doctor_Pic.png" Width="60" Height="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="18,151,775,268"/>
-        <Image Source="Assets/PatientNet_Phone_Pic.png" Width="60" Height="60" Margin="282,108,511,312"/>
-        <Image Source="Assets/PatientNet_Email_Pic.png" Width="60" Height="60" Margin="284,205,509,215"/>
-
         <!-- Textbox to enter EMT's skype name -->
-        <TextBox 
-            x:Name="SkypeName" 
+        <RelativePanel Width="230" Height="63" Margin="-560,0,0,90">
+            <Image Source="Assets/PatientNet_Doctor_Pic.png" Width="60" Height="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
+            <TextBox
+                x:Name="SkypeName" 
             Background="Transparent" 
             Width="150" 
             Header="Enter Skype Name" 
@@ -44,15 +42,19 @@
             HorizontalAlignment="Center" 
             VerticalAlignment="Top" 
             Foreground="SlateGray" 
-            Margin="-530,150,0,0" 
+            Margin="70,0,0,0" 
             Height="62" 
             KeyDown="SkypeDownHandler"
             PointerEntered="SkypeName_PointerEntered"
             PointerExited="SkypeName_PointerExited"
         />
+        </RelativePanel>
+            
         
         <!-- Textbox to enter emergency contact phone number -->
-        <TextBox 
+        <RelativePanel Width="280" Height="63" Margin="0,0,0,80">
+            <Image Source="Assets/PatientNet_Phone_Pic.png" Width="60" Height="60" Margin="0,0,0,0"/>
+            <TextBox 
             x:Name="Phone"
             Background="Transparent"
             Width="200"
@@ -61,16 +63,19 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Top"
             Foreground="SlateGray"
-            Margin="353,110,300,0"
+            Margin="70,0,0,0"
             Height="60"
             IsEnabled="True"
             KeyDown="PhoneDownHandler"
             TextChanged="PhoneTextChanged"
             PointerEntered="Phone_PointerEntered"
             PointerExited="Phone_PointerExited"/>
-
+        </RelativePanel>
+        
         <!-- Textbox to enter emergency contact email address -->
-        <TextBox 
+        <RelativePanel Width="280" Height="63" Margin="0,80,0,0">
+            <Image Source="Assets/PatientNet_Email_Pic.png" Width="60" Height="60" Margin="0,0,0,0"/>
+            <TextBox 
             x:Name="Email"
             Background="Transparent"
             Width="200"
@@ -79,12 +84,13 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Top"
             Foreground="SlateGray"
-            Margin="353,200,300,0"
+            Margin="70,0,0,0"
             Height="60"
             IsEnabled="True"
             KeyDown="EmailDownHandler"
             PointerEntered="Phone_PointerEntered"
             PointerExited="Phone_PointerExited"/>
+        </RelativePanel>
 
         <!-- Textbox for Notifications for Button -->
         <TextBlock 
@@ -125,13 +131,13 @@
         <TextBlock 
                 x:Name="UserHelpText"
                 Width="200"
-                Height="180"
+                Height="140"
                 TextWrapping="WrapWholeWords"
                 FontSize="14px"
                 HorizontalAlignment="Center"
                 TextAlignment="Center"
                 Foreground="Black" 
-                Margin="0,270,0,0"
+                Margin="0,300,0,0"
                 IsDoubleTapEnabled="False"
                 IsTapEnabled="False"
                 IsHoldingEnabled="False"
