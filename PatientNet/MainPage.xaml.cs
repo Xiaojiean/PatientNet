@@ -5,21 +5,15 @@
      *      1) Add summaries
      *      2) Organize member functions
      *      3) Improve UI
+     *      4) Let EMT send twice but not make two requests? Just update old request...
      * 
      */
-
 
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Windows.ApplicationModel;
-    using Windows.Graphics.Display;
-    using Windows.Media.Capture;
     using Windows.System.Display;
-    using Windows.UI;
-    using Windows.UI.Core;
     using Windows.UI.Xaml;
-    using Windows.UI.Xaml.Media;
     using Windows.UI.Xaml.Controls;
     using Windows.UI.Xaml.Input;
     using System.Net.Http;
@@ -28,18 +22,22 @@
     using System.Text;
     using System.Text.RegularExpressions;
 
+    public enum MessageType
+    {
+        Number, Skype, Email
+    };
+
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        MediaCapture _mediaCapture;
         DisplayRequest _displayRequest = new DisplayRequest();
         // bool _isPreviewing;
         MessageType input;
 
         private const int FormattedPhoneLength = 13;
-        private const int SendSleepTimeInMilliseconds = 5000;
+        private const int SleepTimeInMilliseconds = 1000;
         private const string SendSmsEndpoint = "api/v1/sendsms";
         private const string SendEmailEndpoint = "api/v1/sendemail";
         private const string RequestDoctorsEndpoint = "api/v1/requestdoctor";
@@ -48,131 +46,33 @@
         private HashSet<string> numbersSentTo = new HashSet<string>();
         private HashSet<string> emailsSentTo = new HashSet<string>();
         private HashSet<string> skypesSentTo = new HashSet<string>();
+        private HashSet<MessageType> entersPressed = new HashSet<MessageType>();
 
         private delegate void SendRequestEventHandler(object sender, RequestEventArgs e);
         private event SendRequestEventHandler SentRequest;  // Invoke on phone click
-
-        enum MessageType
-        {
-            Number, Skype, Email
-        };
+        private delegate void EnterEventHandler(object sender, EnterEventArgs e);
+        private event EnterEventHandler EnterPressed;  // Invoke on enter
 
         public MainPage()
         {
             this.InitializeComponent();
             this.SentRequest += this.OnRequestSent;
-            //Application.Current.Suspending += Application_Suspending;
+            this.EnterPressed += this.OnEnterPressed;
         }
 
-        /*
-        /// <summary>
-        /// 
-        /// </summary>
-        private async void Application_Suspending(object sender, SuspendingEventArgs e)
-        {
-            // Handle global application events only if this page is active
-            if (Frame.CurrentSourcePageType == typeof(MainPage))
-            {
-                var deferral = e.SuspendingOperation.GetDeferral();
-                await CleanupCameraAsync();
-                deferral.Complete();
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private async Task StartPreviewAsync()
-        {
-            try
-            {
-
-                _mediaCapture = new MediaCapture();
-                await _mediaCapture.InitializeAsync();
-
-                _displayRequest.RequestActive();
-                DisplayInformation.AutoRotationPreferences = DisplayOrientations.Landscape;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // This will be thrown if the user denied access to the camera in privacy settings
-                this.logger.Log("The app was denied access to the camera");
-                return;
-            }
-
-            try
-            {
-                
-                PreviewControl.Source = _mediaCapture;
-                await _mediaCapture.StartPreviewAsync();
-                _isPreviewing = true;
-                
-            }
-            catch (System.IO.FileLoadException)
-            {
-                _mediaCapture.CaptureDeviceExclusiveControlStatusChanged += _mediaCapture_CaptureDeviceExclusiveControlStatusChanged;
-            }
-
-        }
-
-        private async void _mediaCapture_CaptureDeviceExclusiveControlStatusChanged(MediaCapture sender, MediaCaptureDeviceExclusiveControlStatusChangedEventArgs args)
-        {
-            
-            if (args.Status == MediaCaptureDeviceExclusiveControlStatus.SharedReadOnlyAvailable)
-            {
-                this.logger.Log("The camera preview can't be displayed because another app has exclusive access");
-            }
-            else if (args.Status == MediaCaptureDeviceExclusiveControlStatus.ExclusiveControlAvailable && !_isPreviewing)
-            {
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
-                {
-                    await StartPreviewAsync();
-                });
-            }
-            
-        }
- 
-        private async Task CleanupCameraAsync()
-        {
-            if (_mediaCapture != null)
-            {
-                /*
-                if (_isPreviewing)
-                {
-                    await _mediaCapture.StopPreviewAsync();
-                }
-                
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                {
-                    PreviewControl.Source = null;
-                    if (_displayRequest != null)
-                    {
-                        _displayRequest.RequestRelease();
-                    }
-
-                    _mediaCapture.Dispose();
-                    _mediaCapture = null;
-                });
-                
-            }
-        }
-
-        private async void StartButton_Click(object sender, RoutedEventArgs e)
-        {
-            await StartPreviewAsync();
-        }
-
-        private async void StopButton_Click(object sender, RoutedEventArgs e)
-        {
-            await CleanupCameraAsync();
-        }
-        */
         private void SkypeDownHandler(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
-                //TODO: Why doesn't it go to Phone??
+                // Protect against enter registering twice
+                if (this.entersPressed.Contains(MessageType.Skype))
+                {
+                    return;
+                }
+
                 Phone.Focus(FocusState.Pointer);
+                this.logger.Log("Focusing on Phone!");
+                this.EnterPressed.Invoke(this, new EnterEventArgs(MessageType.Number));
             }
         }
 
@@ -180,7 +80,15 @@
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
+                // Protect against enter registering twice
+                if (this.entersPressed.Contains(MessageType.Number))
+                {
+                    return;
+                }
+
                 Email.Focus(FocusState.Pointer);
+                this.logger.Log("Focusing on Email!");
+                this.EnterPressed.Invoke(this, new EnterEventArgs(MessageType.Email));
             }
         }
 
@@ -188,6 +96,12 @@
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
             {
+                // Protect against enter registering twice
+                if (this.entersPressed.Contains(MessageType.Email))
+                {
+                    return;
+                }
+
                 ButtonClick(sender, e);
             }
         }
@@ -266,23 +180,29 @@
         {
             e.Set.Add(e.Content);
 
-            // Disallow sending again for 5 seconds
-            await Task.Delay(MainPage.SendSleepTimeInMilliseconds);
+            // Disallow sending again for 1 second (debouncer)
+            await Task.Delay(MainPage.SleepTimeInMilliseconds);
 
             e.Set.Remove(e.Content);
-            this.logger.Log($"Removed {e.Content} from {nameof(e.Set)}");
+            this.logger.Log($"OnRequestSent: Removed {e.Content} from {nameof(e.Set)}");
+        }
+
+        private async void OnEnterPressed(object sender, EnterEventArgs e)
+        {
+            this.entersPressed.Add(e.Type);
+
+            // Disallow pressing enter again for 1 second (debouncer)
+            await Task.Delay(MainPage.SleepTimeInMilliseconds);
+
+            this.entersPressed.Remove(e.Type);
+            this.logger.Log($"OnEnterPressed: Removed {e.Type} from entersPressed set");
         }
 
         private void ButtonClick(object sender, RoutedEventArgs e)
         {
-            if (SkypeName.Text == String.Empty)
+            if (string.IsNullOrWhiteSpace(SkypeName.Text))
             {
                 NotifyUser("Please enter a skype name.");
-                return;
-            }
-            if (Phone.Text == String.Empty && Email.Text == String.Empty)
-            {
-                NotifyUser($"Please enter a phone number and/or email address.");
                 return;
             }
 
@@ -292,15 +212,14 @@
             Dictionary<MessageType, string> sendTypes = new Dictionary<MessageType, string>();
 
             // Handling Phone Number
-            if (phoneNumber != String.Empty)
+            if (!string.IsNullOrWhiteSpace(phoneNumber))
             {
-                if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length != MainPage.FormattedPhoneLength)
+                if (phoneNumber.Length != MainPage.FormattedPhoneLength)
                 {
                     NotifyUser($"Invalid Number. Please try again.");
                     return;
                 }
-
-                if (this.numbersSentTo.Contains(phoneNumber))
+                else if (this.numbersSentTo.Contains(phoneNumber))
                 {
                     this.logger.Log($"Recently sent to {phoneNumber}. Skipping.");
                     return;  // Don't do anything
@@ -313,12 +232,12 @@
             }
 
             // Handling Email
-            if (email != String.Empty)
+            if (!string.IsNullOrWhiteSpace(email))
             {
-                if (string.IsNullOrWhiteSpace(email))
+                if (this.emailsSentTo.Contains(email))
                 {
-                    NotifyUser($"Invalid Email. Please try again.");
-                    return;
+                    this.logger.Log($"Recently sent to {email}. Skipping.");
+                    return;  // Don't do anything
                 }
 
                 // Add email to set of emails
@@ -327,14 +246,7 @@
                 sendTypes.Add(MessageType.Email, email);
             }
 
-            // Handling Skype Name
-            if (string.IsNullOrWhiteSpace(skypeName))
-            {
-                this.logger.Log($"Got null or empty skype name. Skipping.");
-                NotifyUser("Please enter a skype name.");
-                return;
-            }
-
+            // Handle sending skype name twice
             if (this.skypesSentTo.Contains(skypeName))
             {
                 this.logger.Log($"Recently sent to {skypeName}. Skipping.");
