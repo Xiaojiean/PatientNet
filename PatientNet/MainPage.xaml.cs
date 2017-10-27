@@ -301,15 +301,18 @@
             Phone.InputScope = scope;
         }
 
-        private string PhoneNumberFormatter(string value)
+        private void PhoneNumberFormatter(TextBox textBox)
         {
+            string value = textBox.Text;
+            var oldSelectionStart = textBox.SelectionStart;
+
             value = new Regex(@"\D").Replace(value, string.Empty);
 
             if (string.IsNullOrEmpty(value))
             {
-                return value;
+                // Do nothing
             }
-            if (value.Length < 4)
+            else if (value.Length < 4)
             {
                 value = string.Format("({0}", value.Substring(0, value.Length));
             }
@@ -327,7 +330,13 @@
                 value = string.Format("({0}){1}-{2}", value.Substring(0, 3), value.Substring(3, 3), value.Substring(6));
             }
 
-            return value;
+            textBox.Text = value;
+            if (oldSelectionStart == 1 || oldSelectionStart == 5 || oldSelectionStart == 9)
+            {
+                ++oldSelectionStart;
+            }
+
+            textBox.SelectionStart = oldSelectionStart;
         }
 
         private void PhoneTextChanged(object sender, TextChangedEventArgs e)
@@ -335,13 +344,9 @@
             var textBox = sender as TextBox;
             if (input == MessageType.Number)
             {
-                textBox.Text = PhoneNumberFormatter(textBox.Text);
-
-                // This gets kinda bad when the user tries to insert or delete from the middle
-                if (textBox.Text.Length != 0)
-                {
-                    textBox.SelectionStart = textBox.Text.Length;
-                }
+                this.logger.Log($"Old: {textBox.SelectionStart}");
+                PhoneNumberFormatter(textBox);
+                this.logger.Log($"New: {textBox.SelectionStart}");
             }
         }
 

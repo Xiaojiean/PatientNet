@@ -49,8 +49,7 @@
             PointerExited="SkypeName_PointerExited"
         />
         </RelativePanel>
-            
-        
+
         <!-- Textbox to enter emergency contact phone number -->
         <RelativePanel Width="280" Height="63" Margin="0,0,0,80">
             <Image Source="Assets/PatientNet_Phone_Pic.png" Width="60" Height="60" Margin="0,0,0,0"/>
