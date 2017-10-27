@@ -333,10 +333,9 @@
         private void PhoneTextChanged(object sender, TextChangedEventArgs e)
         {
             var textBox = sender as TextBox;
-            string number = textBox.Text;
             if (input == MessageType.Number)
             {
-                textBox.Text = PhoneNumberFormatter(number);
+                textBox.Text = PhoneNumberFormatter(textBox.Text);
 
                 // This gets kinda bad when the user tries to insert or delete from the middle
                 if (textBox.Text.Length != 0)
@@ -352,6 +351,7 @@
 
             await Task.Delay(3000);
 
+            // Clear text if notification did not change in the past three seconds
             if (UserNotifications.Text == content)
             {
                 UserNotifications.Text = string.Empty;

@@ -60,6 +60,7 @@
             Width="200"
             Header="Enter Phone"
             PlaceholderText="(XXX)XXX-XXXX"
+            MaxLength="13"
             HorizontalAlignment="Center"
             VerticalAlignment="Top"
             Foreground="SlateGray"
