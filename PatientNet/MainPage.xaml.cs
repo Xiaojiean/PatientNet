@@ -383,5 +383,27 @@
         {
             UserHelpSkype.Text = string.Empty;
         }
+
+        // TODO: You have a Toggle Button, ned a step for the on click, and a step for off click
+        private void HelpButtonClicked(object sender, RoutedEventArgs e)
+        {
+            if ((bool)this.HelpButton.IsChecked)
+            {
+                StepOne.Text = "Step 1";
+                StepTwo.Text = "Step 2";
+                StepThree.Text = "Step 3";
+                UserHelpSkype.Text = "Please enter the Skype Name associated with this Hololens.";
+                UserHelpText.Text = "Please enter either the emergency contact's phone number or email address (or both). A text or email to the specified number containing a link to the emergency contact PatientNet portal.";
+                HelpButton.Background = Colors.
+            }
+            else
+            {
+                StepOne.Text = String.Empty;
+                StepTwo.Text = String.Empty;
+                StepThree.Text = String.Empty;
+                UserHelpSkype.Text = String.Empty;
+                UserHelpText.Text = String.Empty;
+            }
+        }
     }
 }

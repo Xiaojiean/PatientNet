@@ -30,6 +30,36 @@
             <Bold> PatientNet </Bold>
         </TextBlock>
 
+        <!-- Button to Display User Help -->
+        <ToggleButton x:Name="HelpButton"
+             Grid.Column="1"
+             Width="40"
+             Height="30"
+             Background="Transparent"
+             VerticalAlignment="Center"
+             HorizontalAlignment="Center"
+             Margin="750,0,0,400"
+             Click="HelpButtonClicked">
+             <ToggleButton.Content>
+                <Image Source="Assets/Help_Icon.png" Width="20"/>
+             </ToggleButton.Content>
+        </ToggleButton>
+        
+        <TextBlock x:Name="StepOne"
+            Width="45"
+            Height="25"
+            Margin="0,0,510,220"/>
+        
+        <TextBlock x:Name="StepTwo"
+            Width="45"
+            Height="25"
+            Margin="0,0,0,220"/>
+            
+        <TextBlock x:Name="StepThree"
+            Width="45"
+            Height="25"
+            Margin="545,0,0,220"/>
+
         <!-- Textbox to enter EMT's skype name -->
         <RelativePanel Width="230" Height="63" Margin="-560,0,0,90">
             <Image Source="Assets/PatientNet_Doctor_Pic.png" Width="60" Height="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
