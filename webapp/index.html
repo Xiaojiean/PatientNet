@@ -20,14 +20,14 @@
     <script type="text/javascript" src="./skype-uri.js"></script>
     <div id="body">
   	<div id="SigninStatus"></div>
-	<button id="endCall" onclick="endCall()">End Conversation</div>
+	<button id="endCall" onclick="endCall()">End Conversation</button>
 	<div id="listdiv">
 		<ul id="emtlist">
 			<li id="emptyLi">No EMTs have requested help</li>
 		</ul>
 	</div>
 	<div id="loader"></div>
-	<div id="conversationWindow"></div>
+	<div id="conversationWindow"></div>	
 	<!--
 	<div class="iframeDiv">
 		<iframe id="fileTable" src="https://drive.google.com/embeddedfolderview?id=0B_Mq6umAVCRGdS1aLWdtV1ZTbEU#list" width="650" height="300"></iframe>
@@ -63,6 +63,8 @@
     var googleApiKey = "AIzaSyBSb9EvtAm8Ntcj5-Rt4L-9gqMeJmMj7kA";
     var webId = null;
     var fileHandles = [];
+    var emtObjects = [];
+    var currConversation = null;
 
     function refreshTable(){
 	var iframe = document.getElementById('fileTable');
@@ -73,6 +75,10 @@
     function endCall() {
 	    var end = confirm("Ending the conversation will close the Skype window and delete all uploaded files. Are you sure you want to end call?");
 	    if (end){
+		    currConversation.leave().then(function() {
+                	contactClient.conversationsManager.conversations.remove(currConversation);
+		    });
+		    currConversation = null;
 	    	document.getElementById('conversationWindow').innerHTML = '';
 		document.getElementById('emtlist').style.display = "block";
 	    	document.getElementById('endCall').style.display = "none";
@@ -89,7 +95,13 @@
       /*
 	 Remove the skype username from list.
       */
-      function removeItem(emtName, listname){
+      function removeItem(emtName, listname) {
+	for (var i=0; i < emtObjects.length; i++) {
+		if (emtObjects[i].id == emtName){
+	  		emtObjects.splice(i,1);
+		}
+	}
+
 	var ul = document.getElementById(listname);
 	var items = ul.getElementsByTagName('li');
 	for (var i=0; i < items.length; i++) {
@@ -115,15 +127,11 @@
 	}
       }
 	
-var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.policy, signature: config.signature});
-      function openPreview(){
-		window.open("https://www.filestackapi.com/api/file/ucj7Ogw9TICOQnMjm8cS?signature="+config.signature+"&policy="+config.policy, "_blank");
-	}
-
-	function deleteFile(handle) {
-		deleteClient.remove(handle);
-		console.log("Removed file handle" + handle);
-	}
+      var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.policy, signature: config.signature});
+      function deleteFile(handle) {
+	deleteClient.remove(handle);
+	console.log("Removed file handle" + handle);
+      }
 
     (function () {
 	if(!webId) {
@@ -164,7 +172,28 @@ var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.polic
 		        wsc.send(JSON.stringify(obj));
 	      	      } else if (signal.type == 'request') {
 			      //skypeid = signal.skypeid;
-			      addToEmtList(signal.skypeid, signal.email, signal.number);
+			      var isNew = true;
+	  		      var emtObj = {};
+			      for (var i=0; i < emtObjects.length; i++) {
+				if (emtObjects[i].id == signal.skypeid){
+	  		      		emtObjects[i].id = signal.skypeid;
+					if (!emtObjects[i].email || (emtObjects[i].email != signal.email && signal.email)) {
+					        emtObjects[i].email = signal.email;
+					}
+					if (!emtObjects[i].number || (emtObjects[i].number != signal.number && signal.number)) {
+						emtObjects[i].number = signal.number;
+					}
+					isNew = false;
+	  				emtObj = emtObjects[i];
+				}
+			      }
+			      if (isNew) {
+	  		      	emtObj['id'] = signal.skypeid;
+	  		      	emtObj['email'] = signal.email;
+	  		      	emtObj['number'] = signal.number;
+	  			emtObjects.push(emtObj);
+			      }
+			      addToEmtList(emtObj);
 			      /*if(confirm("Would you want to accept a request from EMT with id: " + signal.skypeid + "?")) {
 				SkypeUri.ui({
 					"name": "call",
@@ -204,11 +233,22 @@ var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.polic
       /*
 	 Add the skype username to list.
       */
-      function addToEmtList(emtName, email, smsNumber){
+      function addToEmtList(emtObj){
       	var ul = document.getElementById('emtlist');
 	var li = document.createElement('li');
-	li.setAttribute('id', emtName);
-	li.innerHTML = emtName;
+	var appendItem = true;
+	var items = ul.getElementsByTagName('li');
+	for (var i=0; i < items.length; i++) {
+		var item = items[i];
+		if (item.id == emtObj.id){
+	  		li = item;
+	  		appendItem = false;
+			break;
+		}
+	}
+
+	li.setAttribute('id', emtObj.id);
+	li.innerHTML = emtObj.id;
 	//Add styling to list item.
 	li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; cursor:pointer; display: block";
 	li.onmouseenter = function() {
@@ -218,21 +258,18 @@ var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.polic
 		this.style.backgroundColor = '#f6f6f6';
 	}
 	//Start Skype call and open anonymous meeting.
-	if (emtName != 'emptyLi') {
+	if (emtObj.id != 'emptyLi') {
 	  li.onclick=(function(){
 		shortLink = null;
-		var callbackArgs = {
-			'email': email,
-			'sms': smsNumber,
-			'emtName': emtName
-		};
-		scheduleMeeting(callbackArgs, sendShortLink);	
-		window.location.href = "skype:"+emtName+"?call";
-		removeItem(emtName);
+		scheduleMeeting(emtObj, sendShortLink);	
+		window.location.href = "skype:"+emtObj.id+"?call";
+		removeItem(emtObj.id);
 		ul.style.display = "none";
 	  });
 	}
-	ul.appendChild(li);
+	if (appendItem) {
+		ul.appendChild(li);
+	}
 	if(ul.getElementsByTagName('li')[0].id == 'emptyLi'){
 		removeItem('emptyLi', 'emtlist');
 	}
@@ -280,12 +317,15 @@ var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.polic
 	if(email) {
       		obj['email'] = email;
 		obj['type'] = 'email';
-	} else {
+		console.log("Responded with: " + JSON.stringify(obj));
+		wsc.send(JSON.stringify(obj));	
+	}
+        if (smsNumber) {
 		obj['number'] = smsNumber;
 		obj['type'] = 'sms';
+		console.log("Responded with: " + JSON.stringify(obj));
+		wsc.send(JSON.stringify(obj));	
 	}
-	console.log("Responded with: " + JSON.stringify(obj));
-	wsc.send(JSON.stringify(obj));	
       }
 
       /*
@@ -397,7 +437,7 @@ var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.polic
 		      if(this.readyState == 4 && this.status == 200) {
 		      	console.log("Resp: " + req.responseText);
 			shortLink = JSON.parse(req.responseText).id;
-			_sendMessageCallback(shortLink, callbackArgs.email, callbackArgs.sms, callbackArgs.emtName);
+			_sendMessageCallback(shortLink, callbackArgs.email, callbackArgs.number, callbackArgs.id);
 	      	      }
 	      }
       }
@@ -421,6 +461,7 @@ var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.polic
 		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId + "&docId=" + webId;
 		shortenUrl(longUrl, callbackArgs, _sendMessageCallback);
 		var conversation = contactClient.conversationsManager.getConversationByUri(uri);
+		currConversation = conversation;
 		loadChat(conversation, null, "conversationWindow");
 	}); 
       }
