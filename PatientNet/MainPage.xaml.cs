@@ -35,8 +35,6 @@
     public sealed partial class MainPage : Page
     {
         DisplayRequest _displayRequest = new DisplayRequest();
-        // bool _isPreviewing;
-        MessageType input;
 
         private const int FormattedPhoneLength = 13;
         private const int SleepTimeInMilliseconds = 1000;
@@ -49,6 +47,8 @@
         private HashSet<string> emailsSentTo = new HashSet<string>();
         private HashSet<string> skypesSentTo = new HashSet<string>();
         private HashSet<MessageType> entersPressed = new HashSet<MessageType>();
+
+        private int oldPhoneLength = 0;  // Used to determine if change was insert or delete
         private bool helpOn = false;
 
         private delegate void SendRequestEventHandler(object sender, RequestEventArgs e);
@@ -279,7 +279,6 @@
 
         private void PhoneSelected(object sender, RoutedEventArgs e)
         {
-            input = MessageType.Number;
             Phone.MaxLength = 13;
             Phone.PlaceholderText = "(XXX)XXX-XXXX";
             Phone.Text = string.Empty;
@@ -294,7 +293,6 @@
     
         private void EmailSelected(object sender, RoutedEventArgs e)
         {
-            input = MessageType.Email;
             Phone.MaxLength = 100;
             Phone.PlaceholderText = "johndoe@gmail.com";
             Phone.Text = string.Empty;
@@ -307,7 +305,7 @@
             Phone.InputScope = scope;
         }
 
-        private void PhoneNumberFormatter(TextBox textBox)
+        private void PhoneNumberFormatter(TextBox textBox, bool insert)
         {
             string value = textBox.Text;
             var oldSelectionStart = textBox.SelectionStart;
@@ -337,9 +335,19 @@
             }
 
             textBox.Text = value;
-            if (oldSelectionStart == 1 || oldSelectionStart == 5 || oldSelectionStart == 9)
+            if (insert)
             {
-                ++oldSelectionStart;
+                if (oldSelectionStart == 1 || oldSelectionStart == 5 || oldSelectionStart == 9)
+                {
+                    ++oldSelectionStart;
+                }
+            }
+            else
+            {
+                if (oldSelectionStart == 5 || oldSelectionStart == 9)
+                {
+                    --oldSelectionStart;
+                }
             }
 
             textBox.SelectionStart = oldSelectionStart;
@@ -348,12 +356,12 @@
         private void PhoneTextChanged(object sender, TextChangedEventArgs e)
         {
             var textBox = sender as TextBox;
-            if (input == MessageType.Number)
-            {
-                this.logger.Log($"Old: {textBox.SelectionStart}");
-                PhoneNumberFormatter(textBox);
-                this.logger.Log($"New: {textBox.SelectionStart}");
-            }
+            this.logger.Log($"Old: {textBox.SelectionStart}");
+            bool insert = textBox.Text.Length > oldPhoneLength;
+            this.logger.Log(insert ? "inserting" : "deleting");
+            PhoneNumberFormatter(textBox, insert);
+            this.logger.Log($"New: {textBox.SelectionStart}");
+            oldPhoneLength = textBox.Text.Length;
         }
 
         private async void NotifyUser(string content)

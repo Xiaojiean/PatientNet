@@ -9,11 +9,6 @@
 
     <Grid Background="MintCream">
         <Image Source="Assets/PatientNet_Background.jpg" />
-        <!-- Austin's Code for start and stop camera buttons
-        <Button Content="Start Camera" HorizontalAlignment="Left" Margin="10,143,0,0" VerticalAlignment="Top" Click="StartButton_Click" Width="106"/>
-        <Button Content="Stop Camera" HorizontalAlignment="Left" Margin="240,143,0,0" VerticalAlignment="Top" Click="StopButton_Click" RenderTransformOrigin="0.5,0.5" Width="106"/>
-        <CaptureElement Name="PreviewControl" Stretch="Uniform" Margin="10,143,10,0"/>
-        -->
 
         <!-- PatientNet Title -->
         <TextBlock 
@@ -71,61 +66,60 @@
             <Image Source="Assets/PatientNet_Doctor_Pic.png" Width="60" Height="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
             <TextBox
                 x:Name="SkypeName" 
-            Background="Transparent" 
-            Width="150" 
-            Header="Enter Skype Name" 
-            PlaceholderText="e.g. skype.name" 
-            HorizontalAlignment="Center" 
-            VerticalAlignment="Top" 
-            Foreground="SlateGray" 
-            Margin="70,0,0,0" 
-            Height="62" 
-            KeyDown="SkypeDownHandler"
-            PointerEntered="SkypeName_PointerEntered"
-            PointerExited="SkypeName_PointerExited"
-        />
+                Background="Transparent" 
+                Width="150" 
+                Header="Enter Skype Name" 
+                PlaceholderText="e.g. skype.name" 
+                HorizontalAlignment="Center" 
+                VerticalAlignment="Top" 
+                Foreground="SlateGray" 
+                Margin="70,0,0,0" 
+                Height="62" 
+                KeyDown="SkypeDownHandler"
+                PointerEntered="SkypeName_PointerEntered"
+                PointerExited="SkypeName_PointerExited"/>
         </RelativePanel>
 
         <!-- Textbox to enter emergency contact phone number -->
         <RelativePanel Width="280" Height="63" Margin="0,0,0,80">
             <Image Source="Assets/PatientNet_Phone_Pic.png" Width="60" Height="60" Margin="0,0,0,0"/>
             <TextBox 
-            x:Name="Phone"
-            Background="Transparent"
-            Width="200"
-            Header="Enter Phone"
-            PlaceholderText="(XXX)XXX-XXXX"
-            MaxLength="13"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Top"
-            Foreground="SlateGray"
-            Margin="70,0,0,0"
-            Height="60"
-            IsEnabled="True"
-            KeyDown="PhoneDownHandler"
-            TextChanged="PhoneTextChanged"
-            PointerEntered="Phone_PointerEntered"
-            PointerExited="Phone_PointerExited"/>
+                x:Name="Phone"
+                Background="Transparent"
+                Width="200"
+                Header="Enter Phone"
+                PlaceholderText="(XXX)XXX-XXXX"
+                MaxLength="13"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Foreground="SlateGray"
+                Margin="70,0,0,0"
+                Height="60"
+                IsEnabled="True"
+                KeyDown="PhoneDownHandler"
+                TextChanged="PhoneTextChanged"
+                PointerEntered="Phone_PointerEntered"
+                PointerExited="Phone_PointerExited"/>
         </RelativePanel>
         
         <!-- Textbox to enter emergency contact email address -->
         <RelativePanel Width="280" Height="63" Margin="0,80,0,0">
             <Image Source="Assets/PatientNet_Email_Pic.png" Width="60" Height="60" Margin="0,0,0,0"/>
             <TextBox 
-            x:Name="Email"
-            Background="Transparent"
-            Width="200"
-            Header="Enter Email"
-            PlaceholderText="contact@example.com"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Top"
-            Foreground="SlateGray"
-            Margin="70,0,0,0"
-            Height="60"
-            IsEnabled="True"
-            KeyDown="EmailDownHandler"
-            PointerEntered="Phone_PointerEntered"
-            PointerExited="Phone_PointerExited"/>
+                x:Name="Email"
+                Background="Transparent"
+                Width="200"
+                Header="Enter Email"
+                PlaceholderText="contact@example.com"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Foreground="SlateGray"
+                Margin="70,0,0,0"
+                Height="60"
+                IsEnabled="True"
+                KeyDown="EmailDownHandler"
+                PointerEntered="Phone_PointerEntered"
+                PointerExited="Phone_PointerExited"/>
         </RelativePanel>
 
         <!-- Textbox for Notifications for Button -->
@@ -143,8 +137,7 @@
             IsDoubleTapEnabled="False" 
             IsTapEnabled="False" 
             IsHoldingEnabled="False" 
-            IsRightTapEnabled="False" 
-        />
+            IsRightTapEnabled="False"/>
 
         <!-- Textbox for User Help for entering Skype Name-->
         <TextBlock 
@@ -162,8 +155,7 @@
             IsDoubleTapEnabled="False"
             IsTapEnabled="False"
             IsHoldingEnabled="False"
-            IsRightTapEnabled="False" 
-        />
+            IsRightTapEnabled="False"/>
 
         <!-- Textbox for User Help for entering Phone Number / Email -->
         <TextBlock 
@@ -181,8 +173,7 @@
             IsDoubleTapEnabled="False"
             IsTapEnabled="False"
             IsHoldingEnabled="False"
-            IsRightTapEnabled="False" 
-        />
+            IsRightTapEnabled="False"/>
 
         <!-- Button to notify Doctors -->
         <StackPanel>
@@ -202,8 +193,8 @@
                     BorderBrush="SlateGray" 
                     BorderThickness="1">
                         <TextBlock Text="Request Doctors" 
-                           Margin="10,6.5" 
-                           Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
+                            Margin="10,6.5" 
+                            Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
                     </Border>
                 </StackPanel>
             </Button>
