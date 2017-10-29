@@ -13,7 +13,9 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Windows.System.Display;
+    using Windows.UI;
     using Windows.UI.Xaml;
+    using Windows.UI.Xaml.Media;
     using Windows.UI.Xaml.Controls;
     using Windows.UI.Xaml.Input;
     using System.Net.Http;
@@ -58,6 +60,9 @@
             this.InitializeComponent();
             this.SentRequest += this.OnRequestSent;
             this.EnterPressed += this.OnEnterPressed;
+            Application.Current.Resources["ToggleButtonBackgroundChecked"] = new SolidColorBrush(Colors.Transparent);
+            Application.Current.Resources["ToggleButtonBackgroundCheckedPointerOver"] = new SolidColorBrush(Colors.Transparent);
+            Application.Current.Resources["ToggleButtonBackgroundCheckedPressed"] = new SolidColorBrush(Colors.Transparent);
         }
 
         private void SkypeDownHandler(object sender, KeyRoutedEventArgs e)
@@ -394,7 +399,6 @@
                 StepThree.Text = "Step 3";
                 UserHelpSkype.Text = "Please enter the Skype Name associated with this Hololens.";
                 UserHelpText.Text = "Please enter either the emergency contact's phone number or email address (or both). A text or email to the specified number containing a link to the emergency contact PatientNet portal.";
-                HelpButton.Background = Colors.
             }
             else
             {
