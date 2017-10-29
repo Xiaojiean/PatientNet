@@ -24,7 +24,8 @@
   	<div id="conversationContainer"></div>
 	<div class="tableBar">
 		<!--<button class="button" onClick="window.open('https://script.google.com/a/umich.edu/macros/s/AKfycbxmEmVEfqLbqXyN3eRTGKXi4AbglO9Y-C_DZLP7XgoSxqO7em_c/exec');">Upload Files</button>-->
-		<button class="button" onclick="openPicker()" >Upload Files</button>
+		<button id="pickerButton" onclick="openPicker()" >Upload Files</button>		
+  		<div id="uploadText" style="display:none">Upload Successful!</div>
 	</div>
 	<div id="loader"</div>
     </div>
@@ -87,6 +88,10 @@
 			    obj['filename'] = f.filename;
 			    obj['handle'] = f.handle;
 		            wsc.send(JSON.stringify(obj));
+			    document.getElementById('uploadText').style.display = 'block';
+			    setTimeout(function(){
+			    	document.getElementById('uploadText').style.display = 'none';
+			    }, 4000);
 		    }
 	    });
       }

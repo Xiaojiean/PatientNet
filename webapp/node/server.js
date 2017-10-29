@@ -82,7 +82,6 @@ function emtAccepted(emtId, webId) {
 	for(var i = emts.length - 1; i >= 0; i--) {
 		if (emts[i].skypeid == emtId) {
 			emts.splice(i, 1);
-			break;
 		}
 	}
 	var obj = {};
@@ -159,6 +158,7 @@ wss.on('connection', function(client) {
 			}
 		} else if(msg.type == 'sms'){
 			emtAccepted(msg.skypeid, msg.webId);
+			console.log("Sending text to: " + msg.number);
 			twilioClient.messages.create({
 				to: "+1" + msg.number,
 				from: "+12062026089",
@@ -171,6 +171,7 @@ wss.on('connection', function(client) {
 			});
 		} else if (msg.type == 'email') {
 			emtAccepted(msg.skypeid, msg.webId);
+			console.log("Sending email to: " + msg.email);
 			emailMsg.to = msg.email;
 			emailMsg.text = emailBody + msg.link;
 			sgMail.send(emailMsg);
