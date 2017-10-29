@@ -75,9 +75,11 @@
                 Foreground="SlateGray" 
                 Margin="70,0,0,0" 
                 Height="62" 
-                KeyDown="SkypeDownHandler"
+                KeyDown="Skype_KeyDownHandler"
                 PointerEntered="SkypeName_PointerEntered"
-                PointerExited="SkypeName_PointerExited"/>
+                PointerExited="SkypeName_PointerExited"
+                GotFocus="SkypeName_GotFocus"
+                LostFocus="SkypeName_LostFocus"/>
         </RelativePanel>
 
         <!-- Textbox to enter emergency contact phone number -->
@@ -96,10 +98,12 @@
                 Margin="70,0,0,0"
                 Height="60"
                 IsEnabled="True"
-                KeyDown="PhoneDownHandler"
-                TextChanged="PhoneTextChanged"
-                PointerEntered="Phone_PointerEntered"
-                PointerExited="Phone_PointerExited"/>
+                KeyDown="Phone_KeyDownHandler"
+                TextChanged="Phone_TextChanged"
+                PointerEntered="Contact_PointerEntered"
+                PointerExited="Contact_PointerExited"
+                GotFocus="Contact_GotFocus"
+                LostFocus="Contact_LostFocus"/>
         </RelativePanel>
         
         <!-- Textbox to enter emergency contact email address -->
@@ -117,9 +121,11 @@
                 Margin="70,0,0,0"
                 Height="60"
                 IsEnabled="True"
-                KeyDown="EmailDownHandler"
-                PointerEntered="Phone_PointerEntered"
-                PointerExited="Phone_PointerExited"/>
+                KeyDown="Email_KeyDownHandler"
+                PointerEntered="Contact_PointerEntered"
+                PointerExited="Contact_PointerExited"
+                GotFocus="Contact_GotFocus"
+                LostFocus="Contact_LostFocus"/>
         </RelativePanel>
 
         <!-- Textbox for Notifications for Button -->
@@ -159,7 +165,7 @@
 
         <!-- Textbox for User Help for entering Phone Number / Email -->
         <TextBlock 
-            x:Name="UserHelpText"
+            x:Name="UserHelpContact"
             Width="200"
             Height="140"
             TextWrapping="WrapWholeWords"
@@ -178,13 +184,13 @@
         <!-- Button to notify Doctors -->
         <StackPanel>
             <Button
-                x:Name="CallDoctors"
+                x:Name="RequestDoctors"
                 Background="Transparent"
                 HorizontalAlignment="Center"
                 Margin="550,180,0,0"
                 VerticalAlignment="Top"
                 Width="150"
-                Click="ButtonClick">
+                Click="RequestDoctors_Click">
                 <StackPanel>
                     <Border Margin="-4.7"
                     CornerRadius="9" 

@@ -49,6 +49,8 @@
         private HashSet<MessageType> entersPressed = new HashSet<MessageType>();
 
         private int oldPhoneLength = 0;  // Used to determine if change was insert or delete
+        private bool skypeFocused = false;
+        private bool contactFocused = false;
         private bool helpOn = false;
 
         private delegate void SendRequestEventHandler(object sender, RequestEventArgs e);
@@ -64,52 +66,6 @@
             Application.Current.Resources["ToggleButtonBackgroundChecked"] = new SolidColorBrush(Colors.Transparent);
             Application.Current.Resources["ToggleButtonBackgroundCheckedPointerOver"] = new SolidColorBrush(Colors.Transparent);
             Application.Current.Resources["ToggleButtonBackgroundCheckedPressed"] = new SolidColorBrush(Colors.Transparent);
-        }
-
-        private void SkypeDownHandler(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == Windows.System.VirtualKey.Enter)
-            {
-                // Protect against enter registering twice
-                if (this.entersPressed.Contains(MessageType.Skype))
-                {
-                    return;
-                }
-
-                Phone.Focus(FocusState.Pointer);
-                this.logger.Log("Focusing on Phone!");
-                this.EnterPressed.Invoke(this, new EnterEventArgs(MessageType.Number));
-            }
-        }
-
-        private void PhoneDownHandler(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == Windows.System.VirtualKey.Enter)
-            {
-                // Protect against enter registering twice
-                if (this.entersPressed.Contains(MessageType.Number))
-                {
-                    return;
-                }
-
-                Email.Focus(FocusState.Pointer);
-                this.logger.Log("Focusing on Email!");
-                this.EnterPressed.Invoke(this, new EnterEventArgs(MessageType.Email));
-            }
-        }
-
-        private void EmailDownHandler(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == Windows.System.VirtualKey.Enter)
-            {
-                // Protect against enter registering twice
-                if (this.entersPressed.Contains(MessageType.Email))
-                {
-                    return;
-                }
-
-                ButtonClick(sender, e);
-            }
         }
 
         /// <summary>
@@ -204,7 +160,7 @@
             this.logger.Log($"OnEnterPressed: Removed {e.Type} from entersPressed set");
         }
 
-        private void ButtonClick(object sender, RoutedEventArgs e)
+        private void RequestDoctors_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(SkypeName.Text))
             {
@@ -277,32 +233,50 @@
             }
         }
 
-        private void PhoneSelected(object sender, RoutedEventArgs e)
+        private void Skype_KeyDownHandler(object sender, KeyRoutedEventArgs e)
         {
-            Phone.MaxLength = 13;
-            Phone.PlaceholderText = "(XXX)XXX-XXXX";
-            Phone.Text = string.Empty;
-            Phone.IsEnabled = true;
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                // Protect against enter registering twice
+                if (this.entersPressed.Contains(MessageType.Skype))
+                {
+                    return;
+                }
 
-            InputScope scope = new InputScope();
-            InputScopeName scopeName = new InputScopeName();
-            scopeName.NameValue = InputScopeNameValue.TelephoneNumber;
-            scope.Names.Add(scopeName);
-            Phone.InputScope = scope;
+                Phone.Focus(FocusState.Pointer);
+                this.logger.Log("Focusing on Phone!");
+                this.EnterPressed.Invoke(this, new EnterEventArgs(MessageType.Number));
+            }
         }
-    
-        private void EmailSelected(object sender, RoutedEventArgs e)
-        {
-            Phone.MaxLength = 100;
-            Phone.PlaceholderText = "johndoe@gmail.com";
-            Phone.Text = string.Empty;
-            Phone.IsEnabled = true;
 
-            InputScope scope = new InputScope();
-            InputScopeName scopeName = new InputScopeName();
-            scopeName.NameValue = InputScopeNameValue.EmailNameOrAddress;
-            scope.Names.Add(scopeName);
-            Phone.InputScope = scope;
+        private void Phone_KeyDownHandler(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                // Protect against enter registering twice
+                if (this.entersPressed.Contains(MessageType.Number))
+                {
+                    return;
+                }
+
+                Email.Focus(FocusState.Pointer);
+                this.logger.Log("Focusing on Email!");
+                this.EnterPressed.Invoke(this, new EnterEventArgs(MessageType.Email));
+            }
+        }
+
+        private void Email_KeyDownHandler(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                // Protect against enter registering twice
+                if (this.entersPressed.Contains(MessageType.Email))
+                {
+                    return;
+                }
+
+                RequestDoctors_Click(sender, e);
+            }
         }
 
         private void PhoneNumberFormatter(TextBox textBox, bool insert)
@@ -337,6 +311,7 @@
             textBox.Text = value;
             if (insert)
             {
+                // Move cursor over to account for phone format character
                 if (oldSelectionStart == 1 || oldSelectionStart == 5 || oldSelectionStart == 9)
                 {
                     ++oldSelectionStart;
@@ -344,6 +319,7 @@
             }
             else
             {
+                // Move cursor behind phone format character
                 if (oldSelectionStart == 5 || oldSelectionStart == 9)
                 {
                     --oldSelectionStart;
@@ -353,15 +329,93 @@
             textBox.SelectionStart = oldSelectionStart;
         }
 
-        private void PhoneTextChanged(object sender, TextChangedEventArgs e)
+        private void Phone_TextChanged(object sender, TextChangedEventArgs e)
         {
             var textBox = sender as TextBox;
-            this.logger.Log($"Old: {textBox.SelectionStart}");
             bool insert = textBox.Text.Length > oldPhoneLength;
-            this.logger.Log(insert ? "inserting" : "deleting");
             PhoneNumberFormatter(textBox, insert);
-            this.logger.Log($"New: {textBox.SelectionStart}");
             oldPhoneLength = textBox.Text.Length;
+        }
+
+        private void SkypeName_GotFocus(object sender, RoutedEventArgs e)
+        {
+            this.skypeFocused = true;
+            UserHelpSkype.Visibility = Visibility.Visible;
+        }
+
+        private void SkypeName_LostFocus(object sender, RoutedEventArgs e)
+        {
+            this.skypeFocused = false;
+            if (!this.helpOn)
+            {
+                UserHelpSkype.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void Contact_GotFocus(object sender, RoutedEventArgs e)
+        {
+            this.contactFocused = true;
+            UserHelpContact.Visibility = Visibility.Visible;
+        }
+
+        private void Contact_LostFocus(object sender, RoutedEventArgs e)
+        {
+            this.contactFocused = false;
+            if (!this.helpOn)
+            {
+                UserHelpContact.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void Contact_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            // UserHelpText.Text = "Notify Emergency Contact sends a text or email to the specified number containing a link to the emergency contact PatientNet portal.";
+            // UserHelpText.Text = "Please enter either the emergency contact's phone number or email address (or both). A text or email to the specified number containing a link to the emergency contact PatientNet portal.";
+            UserHelpContact.Visibility = Visibility.Visible;
+        }
+
+        private void Contact_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (!(this.helpOn || contactFocused))
+            {
+                UserHelpContact.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void SkypeName_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            UserHelpSkype.Visibility = Visibility.Visible;
+        }
+
+        private void SkypeName_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (!(this.helpOn || skypeFocused))
+            {
+                UserHelpSkype.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // TODO: You have a Toggle Button, need a step for the on click, and a step for off click
+        private void HelpButtonClicked(object sender, RoutedEventArgs e)
+        {
+            if ((bool)this.HelpButton.IsChecked)
+            {
+                StepOne.Visibility = Visibility.Visible;
+                StepTwo.Visibility = Visibility.Visible;
+                StepThree.Visibility = Visibility.Visible;
+                UserHelpSkype.Visibility = Visibility.Visible;
+                UserHelpContact.Visibility = Visibility.Visible;
+                this.helpOn = true;
+            }
+            else
+            {
+                StepOne.Visibility = Visibility.Collapsed;
+                StepTwo.Visibility = Visibility.Collapsed;
+                StepThree.Visibility = Visibility.Collapsed;
+                UserHelpSkype.Visibility = Visibility.Collapsed;
+                UserHelpContact.Visibility = Visibility.Collapsed;
+                this.helpOn = false;
+            }
         }
 
         private async void NotifyUser(string content)
@@ -377,55 +431,5 @@
             }
         }
 
-        private void Phone_PointerEntered(object sender, PointerRoutedEventArgs e)
-        {
-            // UserHelpText.Text = "Notify Emergency Contact sends a text or email to the specified number containing a link to the emergency contact PatientNet portal.";
-            // UserHelpText.Text = "Please enter either the emergency contact's phone number or email address (or both). A text or email to the specified number containing a link to the emergency contact PatientNet portal.";
-            UserHelpText.Visibility = Visibility.Visible;
-        }
-
-        private void Phone_PointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            if (!this.helpOn)
-            {
-                UserHelpText.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        private void SkypeName_PointerEntered(object sender, PointerRoutedEventArgs e)
-        {
-            UserHelpSkype.Visibility = Visibility.Visible;
-        }
-
-        private void SkypeName_PointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            if (!this.helpOn)
-            {
-                UserHelpSkype.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        // TODO: You have a Toggle Button, need a step for the on click, and a step for off click
-        private void HelpButtonClicked(object sender, RoutedEventArgs e)
-        {
-            if ((bool)this.HelpButton.IsChecked)
-            {
-                StepOne.Visibility = Visibility.Visible;
-                StepTwo.Visibility = Visibility.Visible;
-                StepThree.Visibility = Visibility.Visible;
-                UserHelpSkype.Visibility = Visibility.Visible;
-                UserHelpText.Visibility = Visibility.Visible;
-                this.helpOn = true;
-            }
-            else
-            {
-                StepOne.Visibility = Visibility.Collapsed;
-                StepTwo.Visibility = Visibility.Collapsed;
-                StepThree.Visibility = Visibility.Collapsed;
-                UserHelpSkype.Visibility = Visibility.Collapsed;
-                UserHelpText.Visibility = Visibility.Collapsed;
-                this.helpOn = false;
-            }
-        }
     }
 }
