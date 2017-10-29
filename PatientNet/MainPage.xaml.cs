@@ -49,6 +49,7 @@
         private HashSet<string> emailsSentTo = new HashSet<string>();
         private HashSet<string> skypesSentTo = new HashSet<string>();
         private HashSet<MessageType> entersPressed = new HashSet<MessageType>();
+        private bool helpOn = false;
 
         private delegate void SendRequestEventHandler(object sender, RequestEventArgs e);
         private event SendRequestEventHandler SentRequest;  // Invoke on phone click
@@ -371,42 +372,51 @@
         private void Phone_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             // UserHelpText.Text = "Notify Emergency Contact sends a text or email to the specified number containing a link to the emergency contact PatientNet portal.";
-            UserHelpText.Text = "Please enter either the emergency contact's phone number or email address (or both). A text or email to the specified number containing a link to the emergency contact PatientNet portal.";
+            // UserHelpText.Text = "Please enter either the emergency contact's phone number or email address (or both). A text or email to the specified number containing a link to the emergency contact PatientNet portal.";
+            UserHelpText.Visibility = Visibility.Visible;
         }
 
         private void Phone_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            UserHelpText.Text = string.Empty;
+            if (!this.helpOn)
+            {
+                UserHelpText.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void SkypeName_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            UserHelpSkype.Text = "Please enter the Skype Name associated with this Hololens.";
+            UserHelpSkype.Visibility = Visibility.Visible;
         }
 
         private void SkypeName_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            UserHelpSkype.Text = string.Empty;
+            if (!this.helpOn)
+            {
+                UserHelpSkype.Visibility = Visibility.Collapsed;
+            }
         }
 
-        // TODO: You have a Toggle Button, ned a step for the on click, and a step for off click
+        // TODO: You have a Toggle Button, need a step for the on click, and a step for off click
         private void HelpButtonClicked(object sender, RoutedEventArgs e)
         {
             if ((bool)this.HelpButton.IsChecked)
             {
-                StepOne.Text = "Step 1";
-                StepTwo.Text = "Step 2";
-                StepThree.Text = "Step 3";
-                UserHelpSkype.Text = "Please enter the Skype Name associated with this Hololens.";
-                UserHelpText.Text = "Please enter either the emergency contact's phone number or email address (or both). A text or email to the specified number containing a link to the emergency contact PatientNet portal.";
+                StepOne.Visibility = Visibility.Visible;
+                StepTwo.Visibility = Visibility.Visible;
+                StepThree.Visibility = Visibility.Visible;
+                UserHelpSkype.Visibility = Visibility.Visible;
+                UserHelpText.Visibility = Visibility.Visible;
+                this.helpOn = true;
             }
             else
             {
-                StepOne.Text = String.Empty;
-                StepTwo.Text = String.Empty;
-                StepThree.Text = String.Empty;
-                UserHelpSkype.Text = String.Empty;
-                UserHelpText.Text = String.Empty;
+                StepOne.Visibility = Visibility.Collapsed;
+                StepTwo.Visibility = Visibility.Collapsed;
+                StepThree.Visibility = Visibility.Collapsed;
+                UserHelpSkype.Visibility = Visibility.Collapsed;
+                UserHelpText.Visibility = Visibility.Collapsed;
+                this.helpOn = false;
             }
         }
     }

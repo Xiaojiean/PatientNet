@@ -48,16 +48,22 @@
         <TextBlock x:Name="StepOne"
             Width="45"
             Height="25"
+            Visibility="Collapsed"
+            Text="Step 1"
             Margin="0,0,510,220"/>
         
         <TextBlock x:Name="StepTwo"
             Width="45"
             Height="25"
+            Visibility="Collapsed"
+            Text="Step 2"
             Margin="0,0,0,220"/>
             
         <TextBlock x:Name="StepThree"
             Width="45"
             Height="25"
+            Visibility="Collapsed"
+            Text="Step 3"
             Margin="545,0,0,220"/>
 
         <!-- Textbox to enter EMT's skype name -->
@@ -142,37 +148,41 @@
 
         <!-- Textbox for User Help for entering Skype Name-->
         <TextBlock 
-                x:Name="UserHelpSkype"
-                Width="150"
-                Height="180"
-                TextWrapping="WrapWholeWords"
-                FontSize="14px"
-                HorizontalAlignment="Center"
-                TextAlignment="Center"
-                Foreground="Black" 
-                Margin="87,286,616,31"
-                IsDoubleTapEnabled="False"
-                IsTapEnabled="False"
-                IsHoldingEnabled="False"
-                IsRightTapEnabled="False" 
-            />
+            x:Name="UserHelpSkype"
+            Width="150"
+            Height="180"
+            TextWrapping="WrapWholeWords"
+            Visibility="Collapsed"
+            FontSize="14px"
+            HorizontalAlignment="Center"
+            TextAlignment="Center"
+            Text="Please enter the Skype Name associated with this Hololens."
+            Foreground="Black" 
+            Margin="87,286,616,31"
+            IsDoubleTapEnabled="False"
+            IsTapEnabled="False"
+            IsHoldingEnabled="False"
+            IsRightTapEnabled="False" 
+        />
 
         <!-- Textbox for User Help for entering Phone Number / Email -->
         <TextBlock 
-                x:Name="UserHelpText"
-                Width="200"
-                Height="140"
-                TextWrapping="WrapWholeWords"
-                FontSize="14px"
-                HorizontalAlignment="Center"
-                TextAlignment="Center"
-                Foreground="Black" 
-                Margin="0,300,0,0"
-                IsDoubleTapEnabled="False"
-                IsTapEnabled="False"
-                IsHoldingEnabled="False"
-                IsRightTapEnabled="False" 
-            />
+            x:Name="UserHelpText"
+            Width="200"
+            Height="140"
+            TextWrapping="WrapWholeWords"
+            Visibility="Collapsed"
+            FontSize="14px"
+            HorizontalAlignment="Center"
+            TextAlignment="Center"
+            Text="Please enter either the emergency contact's phone number or email address (or both). A text or email to the specified number containing a link to the emergency contact PatientNet portal."
+            Foreground="Black" 
+            Margin="0,300,0,0"
+            IsDoubleTapEnabled="False"
+            IsTapEnabled="False"
+            IsHoldingEnabled="False"
+            IsRightTapEnabled="False" 
+        />
 
         <!-- Button to notify Doctors -->
         <StackPanel>
