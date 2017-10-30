@@ -182,6 +182,8 @@ wss.on('connection', function(client) {
 			payload['handle'] = msg.handle;
 			payload['message'] = JSON.stringify(msg);
 			sendMessageToWeb(payload, msg.docId);
+		} else if (msg.type == 'accept') {
+			emtAccepted(msg.skypeid, msg.webId);
 		}
 	});
 });

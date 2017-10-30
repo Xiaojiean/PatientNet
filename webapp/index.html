@@ -90,10 +90,13 @@
 		}
 	    ];
     var STATE = {
-    	INITIAL: 0,
-	IN_CALL: 1
+    	INITIAL: "none",
     };
     var state = STATE.INITIAL;
+    var MESSAGE = {
+    	INITIAL: '. The following is a list of EMTs who have requested help. Select one to start a Skype conversation with the EMT and create a chat room for the emergency contact to join.',
+	CONVO: '. Please wait for the Emergency contact to join the call. Note that only audio calls are supported with the emergency contact at this time.'
+    };
 
 
     function refreshTable(){
@@ -121,6 +124,7 @@
 		document.getElementById('filesHelp').style.display = "none";
 		state = STATE.INITIAL;
 		document.getElementById('help').onclick=startIntro;
+          	document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + MESSAGE.INITIAL;
 	    }
     }
       
@@ -168,7 +172,7 @@
       function startIntro(){
         var intro = introJs();
 	var options = initialOptions;
-	if (state == STATE.IN_CALL) {
+	if (state != STATE.INITIAL) {
 		options = convoOptions;
 	}
         intro.setOptions({
@@ -221,6 +225,11 @@
 			      //skypeid = signal.skypeid;
 			      var isNew = true;
 	  		      var emtObj = {};
+			      if(signal.skypeid == state) {
+			      	//In conversation with this EMT. Most likely received update to email/number.
+				sendShortLink(shortLink, signal.email, signal.number, signal.skypeid);
+				return
+			      }
 			      for (var i=0; i < emtObjects.length; i++) {
 				if (emtObjects[i].id == signal.skypeid){
 	  		      		emtObjects[i].id = signal.skypeid;
@@ -312,7 +321,7 @@
 		window.location.href = "skype:"+emtObj.id+"?call";
 		removeItem(emtObj.id, 'emtlist');
 		ul.style.display = "none";
-		state = STATE.IN_CALL;
+		state = emtObj.id;
 		document.getElementById('help').onclick=startIntro;
 	  });
 	}
@@ -374,6 +383,11 @@
 		obj['type'] = 'sms';
 		console.log("Responded with: " + JSON.stringify(obj));
 		wsc.send(JSON.stringify(obj));	
+	}
+	if (!email && ! smsNumber) {
+		obj['type'] = 'accept';
+		console.log("Responded with: " + JSON.stringify(obj));
+		wsc.send(JSON.stringify(obj));  
 	}
       }
 
@@ -464,7 +478,7 @@
         };
         
         contactClient.signInManager.signIn(params).then(function(){
-          document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + '. The following is a list of EMTs who have requested help. Select one to start a Skype conversation with the EMT and create a chat room for the emergency contact to join.';
+          document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + MESSAGE.INITIAL;
 	  document.getElementById('emtlist').style.display = "block";
 	  document.getElementById('loader').style.display = "none";
 	  //loadChat();
@@ -547,7 +561,7 @@
 		//conversation.audioService.start();
 		//conversation.videoService.start();
       		document.getElementById('emtlist').style.display = "none";
-          	document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + '. Please wait for the Emergency contact to join the call. Note that only audio calls are supported with the emergency contact at this time.';
+          	document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + MESSAGE.CONVO;
 	  	document.getElementById('endCall').style.display = "block";
 	}, function(error) {
 		console.log("Error: " + error);
