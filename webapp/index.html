@@ -10,12 +10,16 @@
   <script src="./config.js"></script> <!-- setting file-->
   <script src="https://swx.cdn.skype.com/shared/v/1.2.15/SkypeBootstrap.min.js"></script><!--Skype Web SDK-->
   <script src="https://static.filestackapi.com/v3/filestack.js"></script><!--Filepicker-->
+  <script src="./node_modules/intro.js/intro.js"></script><!--Intro.js-->
   <link rel="stylesheet" href="app.css"><!--layout file-->
+  <link rel="stylesheet" href="./node_modules/intro.js/introjs.css"><!--Intro.js-->
+  <link rel="stylesheet" href="./node_modules/intro.js/themes/introjs-flattener.css"><!--Flattener theme-->
 </head>
 <body>
   <div id="container">
     <div class="topnav">
 	 <h1>PatientNet Site</h1>
+	 <a href="#" id="help" onclick="startIntro()">Page Tour</a>
     </div>
     <script type="text/javascript" src="./skype-uri.js"></script>
     <div id="body">
@@ -65,6 +69,32 @@
     var fileHandles = [];
     var emtObjects = [];
     var currConversation = null;
+    var initialOptions = [
+	    {
+	        element: document.getElementById('listdiv'),
+	        intro: "The usernames of EMTs who make requests will show up in this list. Select an EMT to create an anonymous Skype meeting for the emergency contact and a Skype call with the EMT."
+	    },
+	  ];
+    var convoOptions = [
+		{
+			element: document.getElementById('conversationWindow'),
+			intro: "Use this window to send instant messages or start an audio call with the emergency contact."
+		},
+		{
+			element: document.getElementById('filelistdiv'),
+			intro: "Files that the emergency contact uploads will appear here. Click them to view and/or download."
+		},
+		{
+			element: document.getElementById('endCall'),
+			intro: "Click this to end the conversation. This will remove the chat window, delete the uploaded files, and show the list of EMTs waiting for help."
+		}
+	    ];
+    var STATE = {
+    	INITIAL: 0,
+	IN_CALL: 1
+    };
+    var state = STATE.INITIAL;
+
 
     function refreshTable(){
 	var iframe = document.getElementById('fileTable');
@@ -89,6 +119,8 @@
 		fileHandles = [];
 	    	document.getElementById('fileslist').style.display = "none";
 		document.getElementById('filesHelp').style.display = "none";
+		state = STATE.INITIAL;
+		document.getElementById('help').onclick=startIntro;
 	    }
     }
       
@@ -132,6 +164,21 @@
 	deleteClient.remove(handle);
 	console.log("Removed file handle" + handle);
       }
+
+      function startIntro(){
+        var intro = introJs();
+	var options = initialOptions;
+	if (state == STATE.IN_CALL) {
+		options = convoOptions;
+	}
+        intro.setOptions({
+	  steps: options
+	});
+
+        intro.start();
+      }
+
+
 
     (function () {
 	if(!webId) {
@@ -263,8 +310,10 @@
 		shortLink = null;
 		scheduleMeeting(emtObj, sendShortLink);	
 		window.location.href = "skype:"+emtObj.id+"?call";
-		removeItem(emtObj.id);
+		removeItem(emtObj.id, 'emtlist');
 		ul.style.display = "none";
+		state = STATE.IN_CALL;
+		document.getElementById('help').onclick=startIntro;
 	  });
 	}
 	if (appendItem) {

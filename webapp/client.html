@@ -12,11 +12,15 @@
   <script src="https://swx.cdn.skype.com/shared/v/1.2.15/SkypeBootstrap.min.js"></script><!--Skype Web SDK-->
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script><!--JQuery-->
   <script src="https://static.filestackapi.com/v3/filestack.js"></script><!--Filepicker-->
+  <script src="./node_modules/intro.js/intro.js"></script><!--Intro.js-->
+  <link rel="stylesheet" href="./node_modules/intro.js/introjs.css"><!--Intro.js-->
+  <link rel="stylesheet" href="./node_modules/intro.js/themes/introjs-flattener.css"><!--Flattener theme-->
 </head>
 <body>
   <div id="container">
     <div class="topnav">
 	  <h1>PatientNet Site</h1>
+	 <a href="#" id="help" onclick="startIntro()">Page Tour</a>
     </div>
     <div id="body">
   	<div id="SigninStatus"></div>
@@ -96,6 +100,24 @@
 	    });
       }
 	
+      function startIntro(){
+        var intro = introJs();
+	var options =[
+		{
+			element: document.getElementById('conversationWindow'),
+			intro: "Use this to send instant messages or have an audio call with the doctor."
+		},
+		{
+			element: document.getElementById('pickerButton'),
+			intro: "Use this button to upload files that only the doctor will be able to see. They will be deleted when the conversation ends."
+		}
+	       ];
+	intro.setOptions({
+	  steps: options
+	});
+
+        intro.start();
+      }
 
     (function () {
       //Retrieves access token from URL fragment

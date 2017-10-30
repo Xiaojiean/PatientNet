@@ -28,11 +28,17 @@ h1 {
 	z-index:50;
 }
 
+#help {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+}
+
 #body{
-	"width: 850px;
+	width: 900px;
 	margin: 0px auto;
-	margin-top: 60px;
-	font-family: Helvetica;"
+	margin-top: 50px;
+	font-family: Helvetica;
 	padding:10px;
 	padding-bottom:40px;
 }
