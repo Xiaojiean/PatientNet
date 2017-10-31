@@ -19,7 +19,7 @@
   <div id="container">
     <div class="topnav">
 	 <h1>PatientNet Site</h1>
-	 <a href="#" id="help" onclick="startIntro()">Page Tour</a>
+	 <a href="#" id="help" onclick="startIntro()">Tour This Page</a>
     </div>
     <script type="text/javascript" src="./skype-uri.js"></script>
     <div id="body">
@@ -72,21 +72,29 @@
     var initialOptions = [
 	    {
 	        element: document.getElementById('listdiv'),
-	        intro: "The usernames of EMTs who make requests will show up in this list. Select an EMT to create an anonymous Skype meeting for the emergency contact and a Skype call with the EMT."
+	        intro: "The usernames of EMTs who make requests will show up in this list."
+	    },
+	    {
+	        element: document.getElementById('emtlist'),
+	        intro: "Select an EMT to create an anonymous Skype meeting for the emergency contact and a Skype call with the EMT."
 	    },
 	  ];
     var convoOptions = [
 		{
 			element: document.getElementById('conversationWindow'),
-			intro: "Use this window to send instant messages or start an audio call with the emergency contact."
+			intro: "Use this space to send instant messages or start an audio call with the emergency contact."
 		},
 		{
 			element: document.getElementById('filelistdiv'),
 			intro: "Files that the emergency contact uploads will appear here. Click them to view and/or download."
 		},
 		{
+			element: document.getElementById('fileslist'),
+			intro: "Click on a document to view and/or download."
+		},
+		{
 			element: document.getElementById('endCall'),
-			intro: "Click this to end the conversation. This will remove the chat window, delete the uploaded files, and show the list of EMTs waiting for help."
+			intro: "Click this to end the conversation. This will remove the chat window, delete the uploaded files, and return to the list of waiting EMTs."
 		}
 	    ];
     var STATE = {
@@ -104,7 +112,10 @@
 	var tmp = iframe.src;
 	iframe.src = "https://481patientnet.com/blank.html?" + tmp;
     }
-      
+     
+    /*
+       When the doctor ends the call, we need to show the list of waiting EMTs, delete all shared files, and remove the conversation window.
+    */
     function endCall() {
 	    var end = confirm("Ending the conversation will close the Skype window and delete all uploaded files. Are you sure you want to end call?");
 	    if (end){
@@ -132,12 +143,14 @@
 	 Remove the skype username from list.
       */
       function removeItem(emtName, listname) {
+	//Remove the emt name from emtObjects list.
 	for (var i=0; i < emtObjects.length; i++) {
 		if (emtObjects[i].id == emtName){
 	  		emtObjects.splice(i,1);
 		}
 	}
 
+	//Find and remove the list item with the emt name.
 	var ul = document.getElementById(listname);
 	var items = ul.getElementsByTagName('li');
 	for (var i=0; i < items.length; i++) {
@@ -148,6 +161,7 @@
 		}
 	}
 	items = ul.getElementsByTagName('li');
+	//If we have removed all items, add the default emtpy list item to the list.
 	if (items.length == 0) {
 		var li = document.createElement('li');
 		if (listname == 'emtlist') {
@@ -162,13 +176,16 @@
 		ul.append(li);
 	}
       }
-	
+
+      //Create the Filestack client and delete the given file handle.
       var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.policy, signature: config.signature});
       function deleteFile(handle) {
 	deleteClient.remove(handle);
 	console.log("Removed file handle" + handle);
       }
 
+
+      //Initialize and start the introjs object for the page tour.
       function startIntro(){
         var intro = introJs();
 	var options = initialOptions;
@@ -181,7 +198,6 @@
 
         intro.start();
       }
-
 
 
     (function () {
@@ -207,29 +223,16 @@
 			obj['webId'] = webId;
 			console.log("Id: " + webId);
 			wsc.send(JSON.stringify(obj));
-		      } else if(signal.type == 'sms') {
-			var obj = {};
-			obj['type'] = 'sms';
-			obj['link'] = shortLink;
-			obj['number'] = signal.number;
-		        console.log("Shortlink: " + shortLink);
-		        wsc.send(JSON.stringify(obj));
-		      } else if (signal.type == 'email') {
-			var obj = {};
-			obj['type'] = 'email';
-			obj['link'] = shortLink;
-			obj['email'] = signal.email;
-		        console.log("Shortlink: " + shortLink);
-		        wsc.send(JSON.stringify(obj));
 	      	      } else if (signal.type == 'request') {
 			      //skypeid = signal.skypeid;
 			      var isNew = true;
 	  		      var emtObj = {};
 			      if(signal.skypeid == state) {
-			      	//In conversation with this EMT. Most likely received update to email/number.
+			      	// We are currently in conversation with this EMT. Most likely received update to email/number.
 				sendShortLink(shortLink, signal.email, signal.number, signal.skypeid);
 				return
 			      }
+			      //Search for the existing EMT name. If we've found it, update the information with new email and/or number.
 			      for (var i=0; i < emtObjects.length; i++) {
 				if (emtObjects[i].id == signal.skypeid){
 	  		      		emtObjects[i].id = signal.skypeid;
@@ -244,22 +247,13 @@
 				}
 			      }
 			      if (isNew) {
+			        //If we haven't seen this EMT yet, add it to the list.
 	  		      	emtObj['id'] = signal.skypeid;
 	  		      	emtObj['email'] = signal.email;
 	  		      	emtObj['number'] = signal.number;
 	  			emtObjects.push(emtObj);
 			      }
 			      addToEmtList(emtObj);
-			      /*if(confirm("Would you want to accept a request from EMT with id: " + signal.skypeid + "?")) {
-				SkypeUri.ui({
-					"name": "call",
-					"element": "SkypeButton_Call_austin425_1",
-					"participants": [signal.skypeid],
-					"imageSize": 24,
-				});
-				document.getElementById("callHelp").style.display = "block";
-				//window.open("https://481patientnet.com/doc.html?" + signal.skypeid + "#access_token=" + token, "_blank"); 
-			      }*/
 		      } else if (signal.type == 'remove') {
 		      	      removeItem(signal.skypeid, 'emtlist');
 		      } else if (signal.type == 'upload') {
@@ -286,6 +280,16 @@
         }, this);
       }
 
+      function setListItemStyling(li){
+	li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; cursor:pointer; display: block";
+	li.onmouseenter = function() {
+		this.style.backgroundColor = '#eee';
+	}
+	li.onmouseleave = function() {
+		this.style.backgroundColor = '#f6f6f6';
+	}
+      }
+
       /*
 	 Add the skype username to list.
       */
@@ -306,13 +310,7 @@
 	li.setAttribute('id', emtObj.id);
 	li.innerHTML = emtObj.id;
 	//Add styling to list item.
-	li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; cursor:pointer; display: block";
-	li.onmouseenter = function() {
-		this.style.backgroundColor = '#eee';
-	}
-	li.onmouseleave = function() {
-		this.style.backgroundColor = '#f6f6f6';
-	}
+	setListItemStyling(li);
 	//Start Skype call and open anonymous meeting.
 	if (emtObj.id != 'emptyLi') {
 	  li.onclick=(function(){
@@ -329,6 +327,7 @@
 		ul.appendChild(li);
 	}
 	if(ul.getElementsByTagName('li')[0].id == 'emptyLi'){
+		//Remove the default empty list item if it exists.
 		removeItem('emptyLi', 'emtlist');
 	}
       }
@@ -336,30 +335,21 @@
       function addToFileList(fileName, handle){
       	var ul = document.getElementById('fileslist');
 	if(ul.getElementsByTagName('li')[0].id == 'emptyFileLi'){
+		//Remove the default empty list item if it exists.
 		ul.removeChild(ul.getElementsByTagName('li')[0]);
 	}
 	var li = document.createElement('li');
 	li.setAttribute('id', handle);
 	li.innerHTML = fileName;
 	//Add styling to list item.
-	li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; cursor:pointer; display: block";
-	li.onmouseenter = function() {
-		this.style.backgroundColor = '#eee';
-	}
-	li.onmouseleave = function() {
-		this.style.backgroundColor = '#f6f6f6';
-	}
-	//Start Skype call and open anonymous meeting.
+	setListItemStyling(li);
+	//Open File in new window.
 	if (fileName != 'emptyFileLi') {
 	  li.onclick=(function(){
 		window.open("https://www.filestackapi.com/api/file/" + handle + "?signature="+config.signature+"&policy="+config.policy, "_blank");
 	  });
 	}
 	ul.appendChild(li);
-	/*
-	if(ul.getElementsByTagName('li')[0].id == 'emptyLi'){
-		removeItem('emptyFileLi', 'fileslist');
-	}*/
       }
 
 
@@ -438,11 +428,10 @@
 	      });
       
       }
-      /*
-      Initializing Skype Web SDK & Conversation Control.
-      On success, will login in the user to Sype as well by making a callback.
-      */
       
+      /*
+	 Create unique ID for this browser session.
+      */
       function guid(){
       	function s4() {
 		return Math.floor((1+ Math.random()) * 0x10000)
@@ -452,6 +441,10 @@
 	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
       }
 
+      /*
+      Initializing Skype Web SDK & Conversation Control.
+      On success, will login in the user to Sype as well by making a callback.
+      */
       function skypeInit(_loginCallback) {
           Skype.initialize({apiKey:config.apiKeyCC},function(api){
               apiManager = api;

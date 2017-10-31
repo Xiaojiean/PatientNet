@@ -20,7 +20,7 @@
   <div id="container">
     <div class="topnav">
 	  <h1>PatientNet Site</h1>
-	 <a href="#" id="help" onclick="startIntro()">Page Tour</a>
+	 <a href="#" id="help" onclick="startIntro()">Tour This Page</a>
     </div>
     <div id="body">
   	<div id="SigninStatus"></div>
@@ -29,7 +29,7 @@
 	<div class="tableBar">
 		<!--<button class="button" onClick="window.open('https://script.google.com/a/umich.edu/macros/s/AKfycbxmEmVEfqLbqXyN3eRTGKXi4AbglO9Y-C_DZLP7XgoSxqO7em_c/exec');">Upload Files</button>-->
 		<button id="pickerButton" onclick="openPicker()" >Upload Files</button>		
-  		<div id="uploadText" style="display:none">Upload Successful!</div>
+  		<div id="uploadText" style="display:none">Upload Successful! These files will be deleted when the conversation ends.</div>
 	</div>
 	<div id="loader"</div>
     </div>
@@ -51,6 +51,9 @@
 	    wsHost: 'wss://481patientnet.com:3001'
     };
     wsc = null;
+    var MESSAGE = {
+    	INITIAL: '. You have been connected with a doctor. Feel free to call the doctor, but note that only audio calls are supported.'
+    };
 
     window.onload = function() {
 	console.log("URL BEFORE LOAD", window.location.href);  
@@ -75,14 +78,17 @@
 	      }
       }
      
+      /* 
+	 Initialize Filestack object and open Filestack picker to choose files to upload.
+      */
       var fsClient = filestack.init(config.filePickerApiKey, {policy: config.policy, signature: config.signature});
       function openPicker() {
 	    fsClient.pick({
 	          fromSources:["local_file_system","googledrive","dropbox","onedrive"],
 	          maxFiles:5
 	    }).then(function(response) {
-	    // declare this function to handle response
 		    console.log(response);
+		    //Send the handle and filename of each uploaded file to the server, which will pass this info to the doctor.
 		    for (var i in response.filesUploaded) {
 			    var f = response.filesUploaded[i];
 			    console.log("Uploaded filename: " + f.filename + " handle: " + f.handle);
@@ -95,11 +101,12 @@
 			    document.getElementById('uploadText').style.display = 'block';
 			    setTimeout(function(){
 			    	document.getElementById('uploadText').style.display = 'none';
-			    }, 4000);
+			    }, 5000);
 		    }
 	    });
       }
 	
+      //Initialize and start the introjs object for the page tour.
       function startIntro(){
         var intro = introJs();
 	var options =[
@@ -120,19 +127,8 @@
       }
 
     (function () {
-      //Retrieves access token from URL fragment
+      //Retrieves meeting arguments URL fragment
       console.log("URL in retrieve access token func", window.location.href);
-/*      if(location.hash) {
-        var hasharr = location.hash.substr(1).split("&");
-        hasharr.forEach(function(hashelem) {
-          var elemarr = hashelem.split("=");
-          if(elemarr[0] == "access_token") {
-            console.log('Access Token: '+ elemarr[1]);
-	    skypeInit(skypeLogin);
-	    //skypeInit(anonymousLogin);
-	  }
-        }, this);
-      }*/
 	var argStr = window.location.search.substring(1);
 	var args = argStr.split(/[=&]+/);
 	org = args[1];
@@ -216,6 +212,9 @@
           });
       }
 
+      /*
+	 Create unique ID for this browser session.
+      */
       function guid(){
       	function s4() {
 		return Math.floor((1+ Math.random()) * 0x10000)
@@ -249,7 +248,7 @@
 	        };
         	client.signInManager.signIn(params).then(function(){
 	  		var conversation = client.conversationsManager.conversations(0);
-          		document.getElementById('SigninStatus').innerHTML = 'Hello ' + client.personsAndGroupsManager.mePerson.displayName() + '. You have been connected with a doctor. Feel free to call the doctor, but note that only audio calls are supported.';
+          		document.getElementById('SigninStatus').innerHTML = 'Hello ' + client.personsAndGroupsManager.mePerson.displayName() + MESSAGE.INITIAL;
 	  		loadChat(conversation);
 			},function(error){
 	  			console.log("Error signing in: " + error);
@@ -261,29 +260,6 @@
       });
       }
 
-      /*
-      Sign-in Skype
-      *//*
-      function skypeLogin(){
-        var params =
-        {
-         "client_id": config.clientid,
-         "origins": ["https://webdir.online.lync.com/autodiscover/autodiscoverservice.svc/root"],
-         "cors": true,
-         "version": config.appName+'/1.0.0',
-         "redirect_uri": "/client.html"
-        };
-
-        client.signInManager.signIn(params).then(function(){
-          document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + client.personsAndGroupsManager.mePerson.displayName();
-      	  var uri = "sip:tsaoa@patientnet2.onmicrosoft.com;gruu;opaque=app:conf:focus:id:2MJ3F24I";
-	  var conversation = client.conversationsManager.getConversationByUri(uri);
-	  loadChat(conversation);
-        },function(error){
-          console.log(error);
-        });
-      };
-*/
       /*
       Render conversation control on outgoing call
       */
@@ -306,23 +282,6 @@
 	}, function(error) {
 		console.log("Error: " + error);
 	});
-    /*
-	var newDiv = document.createElement('div');
-	var control = document.getElementById('conversationContainer');
-	control.appendChild(newDiv);
-
-        apiManager.renderConversation(newDiv,{
-          //Start outgoing call with chat window
-          modalities:['Chat'],
-          participants: uris
-	}).then(function(conversation) {
-		//Rendered successfully
-		conversation.chatService.start();
-	}, function(error) {
-		console.log("Error: " + error);
-	});
-	*/
-
       };
     }());
   </script>
