@@ -28,8 +28,13 @@
   	<div id="conversationContainer"></div>
 	<div class="tableBar">
 		<!--<button class="button" onClick="window.open('https://script.google.com/a/umich.edu/macros/s/AKfycbxmEmVEfqLbqXyN3eRTGKXi4AbglO9Y-C_DZLP7XgoSxqO7em_c/exec');">Upload Files</button>-->
-		<button id="pickerButton" onclick="openPicker()" >Upload Files</button>		
-  		<div id="uploadText" style="display:none">Upload Successful! These files will be deleted when the conversation ends.</div>
+		<button id="pickerButton" onclick="openPicker()" style="display:none">Upload Files</button>		
+	</div>
+	<div id="filelistdiv">
+		<p id="filesHelp" style="display:none; text-align:center">Click to view the files you've uploaded. These will be deleted when the conversation ends.</p>
+		<ul id="fileslist">
+			<li id="emptyFileLi">No files have been uploaded</li>
+		</ul>
 	</div>
 	<div id="loader"</div>
     </div>
@@ -98,12 +103,42 @@
 			    obj['filename'] = f.filename;
 			    obj['handle'] = f.handle;
 		            wsc.send(JSON.stringify(obj));
-			    document.getElementById('uploadText').style.display = 'block';
-			    setTimeout(function(){
-			    	document.getElementById('uploadText').style.display = 'none';
-			    }, 5000);
+			    addToFileList(f.filename, f.handle);
 		    }
 	    });
+      }
+      
+      function setListItemStyling(li){
+	li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; cursor:pointer; display: block";
+	li.onmouseenter = function() {
+		this.style.backgroundColor = '#eee';
+	}
+	li.onmouseleave = function() {
+		this.style.backgroundColor = '#f6f6f6';
+	}
+      }
+
+      /*
+	 Add an uploaded file to the files list.
+      */
+      function addToFileList(fileName, handle){
+      	var ul = document.getElementById('fileslist');
+	if(ul.getElementsByTagName('li')[0].id == 'emptyFileLi'){
+		//Remove the default empty list item if it exists.
+		ul.removeChild(ul.getElementsByTagName('li')[0]);
+	}
+	var li = document.createElement('li');
+	li.setAttribute('id', handle);
+	li.innerHTML = fileName;
+	//Add styling to list item.
+	setListItemStyling(li);
+	//Open File in new window.
+	if (fileName != 'emptyFileLi') {
+	  li.onclick=(function(){
+		window.open("https://www.filestackapi.com/api/file/" + handle + "?signature="+config.signature+"&policy="+config.policy, "_blank");
+	  });
+	}
+	ul.appendChild(li);
       }
 	
       //Initialize and start the introjs object for the page tour.
@@ -117,7 +152,11 @@
 		{
 			element: document.getElementById('pickerButton'),
 			intro: "Use this button to upload files that only the doctor will be able to see. They will be deleted when the conversation ends."
-		}
+		},
+		{
+			element: document.getElementById('fileslist'),
+			intro: "Files that you upload will appear here. Click them to view and/or download."
+		},
 	       ];
 	intro.setOptions({
 	  steps: options
@@ -136,7 +175,6 @@
 	meetingId = args[5];
 	docId = args[7];
       skypeInit(anonymousLogin);
-
 
       /*
       Grant app with Admin Consent
@@ -279,6 +317,9 @@
 		//Rendered successfully
 		document.getElementById("loader").style.display = "none";
 		conversation.chatService.start();
+		document.getElementById('pickerButton').style.display = "block";
+		document.getElementById('fileslist').style.display = "block";
+		document.getElementById('filesHelp').style.display = "block";
 	}, function(error) {
 		console.log("Error: " + error);
 	});

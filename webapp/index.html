@@ -86,7 +86,7 @@
 		},
 		{
 			element: document.getElementById('filelistdiv'),
-			intro: "Files that the emergency contact uploads will appear here. Click them to view and/or download."
+			intro: "Files that the emergency contact uploads will appear here."
 		},
 		{
 			element: document.getElementById('fileslist'),
@@ -181,7 +181,7 @@
       var deleteClient = filestack.init(config.filePickerApiKey, {policy: config.policy, signature: config.signature});
       function deleteFile(handle) {
 	deleteClient.remove(handle);
-	console.log("Removed file handle" + handle);
+	console.log("Removed file handle: " + handle);
       }
 
 
