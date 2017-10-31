@@ -66,6 +66,7 @@
             Application.Current.Resources["ToggleButtonBackgroundChecked"] = new SolidColorBrush(Colors.Transparent);
             Application.Current.Resources["ToggleButtonBackgroundCheckedPointerOver"] = new SolidColorBrush(Colors.Transparent);
             Application.Current.Resources["ToggleButtonBackgroundCheckedPressed"] = new SolidColorBrush(Colors.Transparent);
+            var task = SkypeNameDataSource.CreateSkypeNameDataAsync();
         }
 
         /// <summary>
@@ -431,5 +432,22 @@
             }
         }
 
+        // TODO:
+        // Working on auto-fill: https://github.com/Microsoft/Windows-universal-samples/blob/master/Samples/XamlAutoSuggestBox/cs/Scenario1.xaml.cs 
+        // Nothing works yet
+
+        private void SkypeName_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            // Only get results when it was a user typing, 
+            // otherwise assume the value got filled in by TextMemberPath 
+            // or the handler for SuggestionChosen.
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+            {
+                var matchingNames = SkypeNameDataSource.GetMatchingNames(sender.Text);
+                sender.ItemsSource = matchingNames;
+                //Set the ItemsSource to be your filtered dataset
+                //sender.ItemsSource = dataset;
+            }
+        }
     }
 }
