@@ -108,10 +108,7 @@
                 }
                 else if (sendTypes.Count == 3)
                 {
-                    // TODO: This will accept all 3 parameters, depending on if both email and phone are provided
-                    //          Server does not yet allow this - it specifies ONE OR THE OTHER - so just choosing number for now
-                    info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
-                    // info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{emailString}\": \"{sendTypes[MessageType.Email]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                    info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{emailString}\": \"{sendTypes[MessageType.Email]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
                 }
                 else
                 {
