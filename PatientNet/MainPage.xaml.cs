@@ -83,7 +83,10 @@
             httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
             string content_type = "application/json";
             string title = "Request Doctors";
-            string success_message = "Successfully Notified Emergency Contact and Doctors";
+            string success_message_both = "Successfully Notified Emergency Contact and Doctors";
+            string success_message_contact = "Successfully Notified Emergency Contact";
+            string success_message_doctor = "Successfully Notified Doctors";
+            string success_message = String.Empty;
 
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(content_type));
             httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
@@ -95,22 +98,48 @@
                 string skypeString = "skypeid";
                 string numberString = "number";
 
-                if (sendTypes.Count == 2)
+                if (sendTypes.Count == 1)
                 {
                     if (sendTypes.ContainsKey(MessageType.Email))
                     {
-                        info = $"{{ \"{emailString}\": \"{sendTypes[MessageType.Email]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                        info = $"{{ \"{emailString}\": \"{sendTypes[MessageType.Email]}\" }}";
+                        success_message = success_message_contact;
                     }
-                    else
+                    else if (sendTypes.ContainsKey(MessageType.Number))
+                    {
+                        info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\" }}";
+                        success_message = success_message_contact;
+                    }
+                    else // MessageType.Skype
+                    {
+                        info = $"{{ \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                        success_message = success_message_doctor;
+                    }
+                }
+                else if (sendTypes.Count == 2)
+                {
+                    if (sendTypes.ContainsKey(MessageType.Email) && sendTypes.ContainsKey(MessageType.Skype))
+                    {
+                        info = $"{{ \"{emailString}\": \"{sendTypes[MessageType.Email]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                        success_message = success_message_both;
+                    }
+                    else if (sendTypes.ContainsKey(MessageType.Number) && sendTypes.ContainsKey(MessageType.Skype))
                     {
                         info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                        success_message = success_message_both;
+                    }
+                    else // information is only for emergency contact
+                    {
+                        info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{emailString}\": \"{sendTypes[MessageType.Email]}\" }}";
+                        success_message = success_message_contact;
                     }
                 }
                 else if (sendTypes.Count == 3)
                 {
                     info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{emailString}\": \"{sendTypes[MessageType.Email]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                    success_message = success_message_both;
                 }
-                else
+                else // sanity check
                 {
                     return;
                 }
@@ -160,11 +189,14 @@
 
         private void RequestDoctors_Click(object sender, RoutedEventArgs e)
         {
+            // I think we made it so that we could just notify an emergency contact?
+            /*
             if (string.IsNullOrWhiteSpace(SkypeName.Text))
             {
                 NotifyUser("Please enter a skype name.");
                 return;
             }
+            */
 
             string phoneNumber = Phone.Text;
             string email = Email.Text;
