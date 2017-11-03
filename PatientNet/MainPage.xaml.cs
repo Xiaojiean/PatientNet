@@ -18,11 +18,13 @@
     using Windows.UI.Xaml.Media;
     using Windows.UI.Xaml.Controls;
     using Windows.UI.Xaml.Input;
+    using Windows.Storage;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using Newtonsoft.Json;
     using System.Text;
     using System.Text.RegularExpressions;
+    using System.IO;
 
     public enum MessageType
     {
@@ -48,6 +50,9 @@
         private HashSet<string> skypesSentTo = new HashSet<string>();
         private HashSet<MessageType> entersPressed = new HashSet<MessageType>();
 
+        private StorageFolder storageFolder = ApplicationData.Current.LocalFolder;
+        private const string skypeNameFile = ".skype.txt";
+
         private int oldPhoneLength = 0;  // Used to determine if change was insert or delete
         private bool skypeFocused = false;
         private bool contactFocused = false;
@@ -66,7 +71,21 @@
             Application.Current.Resources["ToggleButtonBackgroundChecked"] = new SolidColorBrush(Colors.Transparent);
             Application.Current.Resources["ToggleButtonBackgroundCheckedPointerOver"] = new SolidColorBrush(Colors.Transparent);
             Application.Current.Resources["ToggleButtonBackgroundCheckedPressed"] = new SolidColorBrush(Colors.Transparent);
-            var task = SkypeNameDataSource.CreateSkypeNameDataAsync();
+            LoadSavedData();
+        }
+
+        private async void LoadSavedData()
+        {
+            try
+            {
+                StorageFile storageFile = await this.storageFolder.GetFileAsync(MainPage.skypeNameFile);
+                SkypeName.Text = await FileIO.ReadTextAsync(storageFile);
+                this.logger.Log($"LoadSavedData: Found {skypeNameFile} in path {ApplicationData.Current.LocalFolder.Path}");
+            }
+            catch (FileNotFoundException)
+            {
+                this.logger.Log($"LoadSavedData: Did not find {skypeNameFile} in path {ApplicationData.Current.LocalFolder.Path}");
+            }
         }
 
         /// <summary>
@@ -153,6 +172,11 @@
                 if (response.IsSuccessStatusCode)
                 {
                     NotifyUser($"{title}: {success_message}");
+
+                    // Save Skype name for future use
+                    StorageFile storageFile = await this.storageFolder.CreateFileAsync(MainPage.skypeNameFile, CreationCollisionOption.ReplaceExisting);
+                    await FileIO.WriteTextAsync(storageFile, sendTypes[MessageType.Skype]);
+                    this.logger.Log($"LoadSavedData: Wrote to {skypeNameFile} in path {ApplicationData.Current.LocalFolder.Path}");
                 }
                 else
                 {
