@@ -119,20 +119,14 @@
 
                 if (sendTypes.Count == 1)
                 {
-                    if (sendTypes.ContainsKey(MessageType.Email))
-                    {
-                        info = $"{{ \"{emailString}\": \"{sendTypes[MessageType.Email]}\" }}";
-                        success_message = success_message_contact;
-                    }
-                    else if (sendTypes.ContainsKey(MessageType.Number))
-                    {
-                        info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\" }}";
-                        success_message = success_message_contact;
-                    }
-                    else // MessageType.Skype
+                    if (sendTypes.ContainsKey(MessageType.Skype))
                     {
                         info = $"{{ \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
                         success_message = success_message_doctor;
+                    }
+                    else
+                    {
+                        return;
                     }
                 }
                 else if (sendTypes.Count == 2)
@@ -213,14 +207,11 @@
 
         private void RequestDoctors_Click(object sender, RoutedEventArgs e)
         {
-            // I think we made it so that we could just notify an emergency contact?
-            /*
             if (string.IsNullOrWhiteSpace(SkypeName.Text))
             {
                 NotifyUser("Please enter a skype name.");
                 return;
             }
-            */
 
             string phoneNumber = Phone.Text;
             string email = Email.Text;
