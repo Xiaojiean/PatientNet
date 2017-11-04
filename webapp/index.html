@@ -14,11 +14,12 @@
   <link rel="stylesheet" href="app.css"><!--layout file-->
   <link rel="stylesheet" href="./node_modules/intro.js/introjs.css"><!--Intro.js-->
   <link rel="stylesheet" href="./node_modules/intro.js/themes/introjs-flattener.css"><!--Flattener theme-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"><!--Font Awesome icons-->
 </head>
 <body>
   <div id="container">
     <div class="topnav">
-	 <h1>PatientNet Site</h1>
+	 <h1>PatientNet Site  <i class="fa fa-ambulance"></i></h1>
 	 <a href="#" id="help" onclick="startIntro()">Tour This Page</a>
     </div>
     <script type="text/javascript" src="./skype-uri.js"></script>
@@ -259,6 +260,8 @@
 		      } else if (signal.type == 'upload') {
 			      fileHandles.push(signal.handle);
 		      	      addToFileList(signal.filename, signal.handle);
+		      } else if (signal.type == 'delete') {
+		      	      removeItem(signal.handle, 'fileslist');
 		      }
 	    	};
 	      wsc.onclose = function() {

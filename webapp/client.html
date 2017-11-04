@@ -15,11 +15,12 @@
   <script src="./node_modules/intro.js/intro.js"></script><!--Intro.js-->
   <link rel="stylesheet" href="./node_modules/intro.js/introjs.css"><!--Intro.js-->
   <link rel="stylesheet" href="./node_modules/intro.js/themes/introjs-flattener.css"><!--Flattener theme-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"><!--Font Awesome icons-->
 </head>
 <body>
   <div id="container">
     <div class="topnav">
-	  <h1>PatientNet Site</h1>
+	 <h1>PatientNet Site  <i class="fa fa-ambulance"></i></h1>
 	 <a href="#" id="help" onclick="startIntro()">Tour This Page</a>
     </div>
     <div id="body">
@@ -33,7 +34,9 @@
 	<div id="filelistdiv">
 		<p id="filesHelp" style="display:none; text-align:center">Click to view the files you've uploaded. These will be deleted when the conversation ends.</p>
 		<ul id="fileslist">
-			<li id="emptyFileLi">No files have been uploaded</li>
+			<li id="emptyFileLi">
+				No files have been uploaded
+			</li>
 		</ul>
 	</div>
 	<div id="loader"</div>
@@ -138,7 +141,55 @@
 		window.open("https://www.filestackapi.com/api/file/" + handle + "?signature="+config.signature+"&policy="+config.policy, "_blank");
 	  });
 	}
+
+	//Add delete button to list item.
+	var but = document.createElement('button');
+	but.innerHTML = '<i class="fa fa-trash"></i>';
+	but.style = "float:right";
+	but.onclick=(function(){
+		event.stopPropagation(); //Need this to prevent list item onclick listener from running.
+		//Notify the doctor that this item was removed.
+		removeItem(handle, 'fileslist');
+		var obj = {};
+		obj['type'] = 'delete';
+		obj['docId'] = docId;
+		obj['filename'] = fileName;
+		obj['handle'] = handle;
+		wsc.send(JSON.stringify(obj));
+	});
+	li.appendChild(but);
 	ul.appendChild(li);
+      }
+      
+      /*
+	 Remove an item from list.
+      */
+      function removeItem(emtName, listname) {
+	//Find and remove the list item with the emt name.
+	var ul = document.getElementById(listname);
+	var items = ul.getElementsByTagName('li');
+	for (var i=0; i < items.length; i++) {
+		var li = items[i];
+		console.log("id: " + li.id + " emt: " + emtName);
+		if (li.id == emtName){
+			ul.removeChild(li);
+		}
+	}
+	items = ul.getElementsByTagName('li');
+	//If we have removed all items, add the default emtpy list item to the list.
+	if (items.length == 0) {
+		var li = document.createElement('li');
+		if (listname == 'emtlist') {
+			li.setAttribute('id', 'emptyLi');
+			li.innerHTML = 'No EMTs have requested help';
+		} else if (listname == 'fileslist') {
+			li.setAttribute('id', 'emptyFileLi');
+			li.innerHTML = 'No files have been uploaded';
+		}
+		//Add styling to list item.
+		li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; display: block";
+		ul.append(li);
+	}
       }
 	
       //Initialize and start the introjs object for the page tour.

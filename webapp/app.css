@@ -68,7 +68,7 @@ h1 {
 #loader{
 	position: absolute;
 	left: 50%;
-	top:20%;
+	top:40%;
 	z-index: 1;
 	width: 80px;
 	height: 80px;
