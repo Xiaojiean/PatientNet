@@ -70,6 +70,7 @@
     var fileHandles = [];
     var emtObjects = [];
     var currConversation = null;
+    var signedIn = false;
     var initialOptions = [
 	    {
 	        element: document.getElementById('listdiv'),
@@ -255,11 +256,19 @@
 	  			emtObjects.push(emtObj);
 			      }
 			      addToEmtList(emtObj);
+			      if (signedIn && state == STATE.INITIAL) {
+				var audio = new Audio('./assets/new_emt_sound.wav');
+				audio.play();
+			      }
 		      } else if (signal.type == 'remove') {
 		      	      removeItem(signal.skypeid, 'emtlist');
 		      } else if (signal.type == 'upload') {
 			      fileHandles.push(signal.handle);
 		      	      addToFileList(signal.filename, signal.handle);
+			      if (signedIn) {
+				var audio = new Audio('./assets/received_file_sound.wav');
+				audio.play();
+			      }
 		      } else if (signal.type == 'delete') {
 		      	      removeItem(signal.handle, 'fileslist');
 		      }
@@ -333,6 +342,7 @@
 		//Remove the default empty list item if it exists.
 		removeItem('emptyLi', 'emtlist');
 	}
+
       }
       
       function addToFileList(fileName, handle){
@@ -477,6 +487,7 @@
           document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + MESSAGE.INITIAL;
 	  document.getElementById('emtlist').style.display = "block";
 	  document.getElementById('loader').style.display = "none";
+	  signedIn = true;
 	  //loadChat();
 	  //scheduleMeeting();
         },function(error){
