@@ -5,7 +5,9 @@
      *      1) Add summaries
      *      2) Organize member functions
      *      3) Improve UI
-     *      4) Let EMT send twice but not make two requests? Just update old request...
+     *      4) Add sound button enable / disable for HoloLens clicks
+     *      5) Improve user notification textbox (something more like toast)
+     *      6) Add headers to fields to better distinguish contact vs emt info
      * 
      */
 
@@ -25,6 +27,7 @@
     using System.Text;
     using System.Text.RegularExpressions;
     using System.IO;
+    using Windows.UI.Xaml.Media.Imaging;
 
     public enum MessageType
     {
@@ -440,7 +443,6 @@
             }
         }
 
-        // TODO: You have a Toggle Button, need a step for the on click, and a step for off click
         private void HelpButtonClicked(object sender, RoutedEventArgs e)
         {
             if ((bool)this.HelpButton.IsChecked)
@@ -463,6 +465,19 @@
             }
         }
 
+        // TODO: Need to actually disable sounds of clicks
+        private void SoundButtonClicked(object sender, RoutedEventArgs e)
+        {
+            if ((bool)this.SoundButton.IsChecked)
+            {
+                SoundButtonPic.Source = new BitmapImage(new Uri("ms-appx:///Assets/No_Sound.png", UriKind.Absolute)); 
+            }
+            else
+            {
+                SoundButtonPic.Source = new BitmapImage(new Uri("ms-appx:///Assets/Sound.png", UriKind.Absolute));
+            }
+        }
+
         private async void NotifyUser(string content)
         {
             UserNotifications.Text = content;
@@ -476,22 +491,5 @@
             }
         }
 
-        // TODO:
-        // Working on auto-fill: https://github.com/Microsoft/Windows-universal-samples/blob/master/Samples/XamlAutoSuggestBox/cs/Scenario1.xaml.cs 
-        // Nothing works yet
-
-        private void SkypeName_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
-        {
-            // Only get results when it was a user typing, 
-            // otherwise assume the value got filled in by TextMemberPath 
-            // or the handler for SuggestionChosen.
-            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
-            {
-                var matchingNames = SkypeNameDataSource.GetMatchingNames(sender.Text);
-                sender.ItemsSource = matchingNames;
-                //Set the ItemsSource to be your filtered dataset
-                //sender.ItemsSource = dataset;
-            }
-        }
     }
 }

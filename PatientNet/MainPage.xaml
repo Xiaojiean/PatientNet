@@ -39,7 +39,22 @@
                 <Image Source="Assets/Help_Icon.png" Width="20"/>
              </ToggleButton.Content>
         </ToggleButton>
-        
+
+        <!-- Button to Toggle Sound -->
+        <ToggleButton x:Name="SoundButton"
+             Grid.Column="1"
+             Width="40"
+             Height="30"
+             Background="Transparent"
+             VerticalAlignment="Center"
+             HorizontalAlignment="Center"
+             Margin="660,0,0,400"
+             Click="SoundButtonClicked">
+            <ToggleButton.Content>
+                <Image x:Name="SoundButtonPic" Source="Assets/Sound.png" Width="20"/>
+            </ToggleButton.Content>
+        </ToggleButton>
+
         <TextBlock x:Name="StepOne"
             Width="45"
             Height="25"
@@ -79,8 +94,7 @@
                 PointerEntered="SkypeName_PointerEntered"
                 PointerExited="SkypeName_PointerExited"
                 GotFocus="SkypeName_GotFocus"
-                LostFocus="SkypeName_LostFocus"
-                TextChanged="SkypeName_TextChanged"/>
+                LostFocus="SkypeName_LostFocus"/>
         </RelativePanel>
 
         <!-- Textbox to enter emergency contact phone number -->
