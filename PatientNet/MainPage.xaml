@@ -76,6 +76,12 @@
             Text="Step 3"
             Margin="545,0,0,220"/>
 
+        <TextBlock x:Name="AvailableDoctors"
+            Width="150"
+            Height="25"
+            TextAlignment="Center"
+            Margin="545,0,0,70"/>
+
         <!-- Textbox to enter EMT's skype name -->
         <RelativePanel Width="230" Height="63" Margin="-560,0,0,90">
             <Image Source="Assets/PatientNet_Doctor_Pic.png" Width="60" Height="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
@@ -105,7 +111,7 @@
                 Background="Transparent"
                 Width="200"
                 InputScope="TelephoneNumber"
-                Header="Enter Phone"
+                Header="Enter Contact Phone"
                 PlaceholderText="(XXX)XXX-XXXX"
                 MaxLength="13"
                 HorizontalAlignment="Center"
@@ -129,7 +135,7 @@
                 x:Name="Email"
                 Background="Transparent"
                 Width="200"
-                Header="Enter Email"
+                Header="Enter Contact Email"
                 InputScope="EmailNameOrAddress"
                 PlaceholderText="contact@example.com"
                 HorizontalAlignment="Center"
@@ -204,7 +210,7 @@
                 x:Name="RequestDoctors"
                 Background="Transparent"
                 HorizontalAlignment="Center"
-                Margin="550,180,0,0"
+                Margin="550,220,0,0"
                 VerticalAlignment="Top"
                 Width="150"
                 Click="RequestDoctors_Click">

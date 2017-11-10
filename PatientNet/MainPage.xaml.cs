@@ -56,6 +56,9 @@
         private StorageFolder storageFolder = ApplicationData.Current.LocalFolder;
         private const string skypeNameFile = ".skype.txt";
 
+        private DispatcherTimer availableDoctorTimer = new DispatcherTimer();
+        TimeSpan doctorTimerInterval = TimeSpan.FromMinutes(1);  // Query every minute
+
         private int oldPhoneLength = 0;  // Used to determine if change was insert or delete
         private bool skypeFocused = false;
         private bool contactFocused = false;
@@ -75,6 +78,20 @@
             Application.Current.Resources["ToggleButtonBackgroundCheckedPointerOver"] = new SolidColorBrush(Colors.Transparent);
             Application.Current.Resources["ToggleButtonBackgroundCheckedPressed"] = new SolidColorBrush(Colors.Transparent);
             LoadSavedData();
+
+            availableDoctorTimer.Interval = this.doctorTimerInterval;
+            availableDoctorTimer.Tick += QueryAvailableDoctors;
+            availableDoctorTimer.Start();
+            QueryAvailableDoctors(null, null);
+        }
+
+        private void QueryAvailableDoctors(object sender, object e)
+        {
+            this.logger.Log("Querying available doctors");
+
+            // API Call
+            int numAvailableDoctors = 3;
+            AvailableDoctors.Text = $"Available Doctors: {numAvailableDoctors}";
         }
 
         private async void LoadSavedData()
