@@ -213,14 +213,11 @@
 
         private void RequestDoctors_Click(object sender, RoutedEventArgs e)
         {
-            // I think we made it so that we could just notify an emergency contact?
-            /*
             if (string.IsNullOrWhiteSpace(SkypeName.Text))
             {
                 NotifyUser("Please enter a skype name.");
                 return;
             }
-            */
 
             string phoneNumber = Phone.Text;
             string email = Email.Text;
