@@ -157,6 +157,7 @@ wss.on('connection', function(client) {
 				client.send(JSON.stringify(emts[i]));
 			}
 		} else if(msg.type == 'sms'){
+			//Received request to send SMS.
 			emtAccepted(msg.skypeid, msg.webId);
 			console.log("Sending text to: " + msg.number);
 			twilioClient.messages.create({
@@ -170,20 +171,33 @@ wss.on('connection', function(client) {
 		
 			});
 		} else if (msg.type == 'email') {
+			//Received request to send email.
 			emtAccepted(msg.skypeid, msg.webId);
 			console.log("Sending email to: " + msg.email);
 			emailMsg.to = msg.email;
 			emailMsg.text = emailBody + msg.link;
 			sgMail.send(emailMsg);
+		} else if (msg.type == 'accept') {
+			//Resolved Skype ID without an email or sms request.
+			emtAccepted(msg.skypeid, msg.webId);
 		} else if (msg.type == 'upload') {
+			//Received request from contact to upload a photo.
+			//Notify the corresponding doctor web session.
 			var payload = {};
 			payload['type'] = 'upload';
 			payload['filename'] = msg.filename;
 			payload['handle'] = msg.handle;
 			payload['message'] = JSON.stringify(msg);
 			sendMessageToWeb(payload, msg.docId);
-		} else if (msg.type == 'accept') {
-			emtAccepted(msg.skypeid, msg.webId);
+		} else if (msg.type == 'delete') {
+			//Received request from contact to delete a photo.
+			//Notify the corresponding doctor web session.
+			var payload = {};
+			payload['type'] = 'delete';
+			payload['filename'] = msg.filename;
+			payload['handle'] = msg.handle;
+			payload['message'] = JSON.stringify(msg);
+			sendMessageToWeb(payload, msg.docId);
 		}
 	});
 });
