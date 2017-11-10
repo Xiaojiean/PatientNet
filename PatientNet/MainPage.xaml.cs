@@ -46,12 +46,16 @@
         private const string SendSmsEndpoint = "api/v1/sendsms";
         private const string SendEmailEndpoint = "api/v1/sendemail";
         private const string RequestDoctorsEndpoint = "api/v1/requestdoctor";
+        private const string AvailableDoctorsEndpoint = "api/v1/getavailabledoctors";
 
         private Logger logger = new Logger();
         private HashSet<string> numbersSentTo = new HashSet<string>();
         private HashSet<string> emailsSentTo = new HashSet<string>();
         private HashSet<string> skypesSentTo = new HashSet<string>();
         private HashSet<MessageType> entersPressed = new HashSet<MessageType>();
+
+        HttpClient httpClient;
+        private const string ContentType = "application/json";
 
         private StorageFolder storageFolder = ApplicationData.Current.LocalFolder;
         private const string skypeNameFile = ".skype.txt";
@@ -77,21 +81,47 @@
             Application.Current.Resources["ToggleButtonBackgroundChecked"] = new SolidColorBrush(Colors.Transparent);
             Application.Current.Resources["ToggleButtonBackgroundCheckedPointerOver"] = new SolidColorBrush(Colors.Transparent);
             Application.Current.Resources["ToggleButtonBackgroundCheckedPressed"] = new SolidColorBrush(Colors.Transparent);
-            LoadSavedData();
+
+            LoadSavedData();  // Load the previous skype name
+
+            InitHttpClient();  // Initialize http client to make api calls
 
             availableDoctorTimer.Interval = this.doctorTimerInterval;
             availableDoctorTimer.Tick += QueryAvailableDoctors;
             availableDoctorTimer.Start();
-            QueryAvailableDoctors(null, null);
+
+            QueryAvailableDoctors(null, null);  // Initial query for available doctors
         }
 
-        private void QueryAvailableDoctors(object sender, object e)
+        private void InitHttpClient()
+        {
+            this.httpClient = new HttpClient
+            {
+                BaseAddress = new Uri("https://481patientnet.com:3001")
+            };
+
+            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MainPage.ContentType));
+            this.httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
+        }
+
+        private async void QueryAvailableDoctors(object sender, object e)
         {
             this.logger.Log("Querying available doctors");
+            
+            // Send empty content
+            HttpContent content = new StringContent(string.Empty, Encoding.UTF8, MainPage.ContentType);
+            HttpResponseMessage response = await this.httpClient.PostAsync(this.httpClient.BaseAddress + AvailableDoctorsEndpoint, content);
 
             // API Call
-            int numAvailableDoctors = 3;
-            AvailableDoctors.Text = $"Available Doctors: {numAvailableDoctors}";
+            if (response.IsSuccessStatusCode)
+            {
+                int numAvailableDoctors = 9999;
+                AvailableDoctors.Text = $"Available Doctors: {numAvailableDoctors}";
+            }
+            else
+            {
+                this.logger.Log("QueryAvailableDoctors: When querying for available doctors, did not get a success message.");
+            }
         }
 
         private async void LoadSavedData()
@@ -118,21 +148,15 @@
                 throw new ArgumentNullException(nameof(endpoint));
             }
 
-            HttpClient httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
-            string content_type = "application/json";
             string title = "Request Doctors";
             string success_message_both = "Successfully Notified Emergency Contact and Doctors";
             string success_message_contact = "Successfully Notified Emergency Contact";
             string success_message_doctor = "Successfully Notified Doctors";
-            string success_message = String.Empty;
-
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(content_type));
-            httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
+            string success_message;
             
             try
             {
-                string info = String.Empty;
+                string info;
                 string emailString = "email";
                 string skypeString = "skypeid";
                 string numberString = "number";
@@ -177,11 +201,10 @@
                     return;
                 }
 
-                var serialized = JsonConvert.SerializeObject(info);
-                HttpContent content = new StringContent(info, Encoding.UTF8, content_type);
+                HttpContent content = new StringContent(info, Encoding.UTF8, MainPage.ContentType);
                 this.logger.Log("Sending " + info + " to " + endpoint);
 
-                HttpResponseMessage response = await httpClient.PostAsync(httpClient.BaseAddress + endpoint, content);
+                HttpResponseMessage response = await this.httpClient.PostAsync(this.httpClient.BaseAddress + endpoint, content);
 
                 if (response.IsSuccessStatusCode)
                 {
