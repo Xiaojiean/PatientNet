@@ -24,6 +24,7 @@
     using System.Net.Http;
     using System.Net.Http.Headers;
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using System.Text;
     using System.Text.RegularExpressions;
     using System.IO;
@@ -115,7 +116,9 @@
             // API Call
             if (response.IsSuccessStatusCode)
             {
-                int numAvailableDoctors = 9999;
+                var responseBody = response.Content.ReadAsStringAsync().Result;
+                JObject s = JObject.Parse(responseBody);
+                int numAvailableDoctors = (int)s["availableDoctors"];
                 AvailableDoctors.Text = $"Available Doctors: {numAvailableDoctors}";
             }
             else
