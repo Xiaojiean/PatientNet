@@ -138,6 +138,13 @@
 		state = STATE.INITIAL;
 		document.getElementById('help').onclick=startIntro;
           	document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + MESSAGE.INITIAL;
+
+	  	//Let server know that this doctor is available again.
+		var obj = {};
+		obj['type'] = 'endCall';
+		obj['webId'] = webId;
+	  	console.log("Sending endMessage: " + JSON.stringify(obj));
+		wsc.send(JSON.stringify(obj));
 	    }
     }
       

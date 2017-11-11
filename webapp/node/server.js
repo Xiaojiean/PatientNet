@@ -16,6 +16,7 @@ var cfg = {
 	ssl_cert:'./ssl/fullchain.pem'
 };
 var wsClients = {};
+var availDocs = 0; //Number of available doctors.
 var emts = [];
 //Keys for TWilio
 var twilioClient = require('twilio')(config.twilioSid, config.twilioKey);
@@ -43,28 +44,6 @@ app.use(function(req, res, next) {
 	next();
 });
 
-/*
-app.post('/api/v1/sendsms', function(req, res) {
-	console.log('/api/v1/sendsms received: ' + JSON.stringify(req.body));
-	var obj = {};
-	obj['type'] = 'sms';
-	obj['number'] = req.body.number;
-	obj['message'] = JSON.stringify(req.body);
-	sendMessage(obj);
-	res.status(200).send("OK");
-});
-
-app.post('/api/v1/sendemail', function(req, res) {
-	console.log('/api/v1/sendemail received: ' + JSON.stringify(req.body));
-	var obj = {};
-	obj['type'] = 'email';
-	obj['email'] = req.body.email;
-	obj['message'] = JSON.stringify(req.body);
-	sendMessage(obj);
-	res.status(200).send("OK");
-});
-*/
-
 app.post('/api/v1/requestdoctor', function(req, res) {
 	console.log('/api/v1/requestdoctor received: ' + JSON.stringify(req.body));
 	var obj = {};
@@ -78,6 +57,14 @@ app.post('/api/v1/requestdoctor', function(req, res) {
 	res.status(200).send("OK");
 });
 
+app.post('/api/v1/getavailabledoctors', function(req, res) {
+	console.log('/api/v1/getavailabledoctors received: ' + JSON.stringify(req.body));
+	updateClients();
+	var obj = {};
+	obj['availableDoctors'] = availDocs;
+	res.status(200).send(JSON.stringify(obj));
+});
+
 function emtAccepted(emtId, webId) {
 	for(var i = emts.length - 1; i >= 0; i--) {
 		if (emts[i].skypeid == emtId) {
@@ -89,6 +76,7 @@ function emtAccepted(emtId, webId) {
 	obj['skypeid'] = emtId;
 	obj['message'] = 'Remove id: ' + emtId;
 	sendMessage(obj);
+	availDocs--;
 }
 
 function sendMessage(obj){
@@ -115,8 +103,7 @@ function sendMessageToWeb(obj, id) {
 				cli.send(JSON.stringify(obj));
 			}
 		}
-	}
-	
+	}	
 }
 
 //Check if clients are open, if not, remove them from dictionary.
@@ -127,6 +114,7 @@ function updateClients() {
 		if(cli.readyState != cli.OPEN) {
 			console.log("Removing id: " + key);
 			delete wsClients[cli];
+			availDocs--;
 		} else {
 			tmp[key] = cli;
 		}
@@ -156,6 +144,7 @@ wss.on('connection', function(client) {
 			for (var i = 0; i < emts.length; i++) {
 				client.send(JSON.stringify(emts[i]));
 			}
+			availDocs++;
 		} else if(msg.type == 'sms'){
 			//Received request to send SMS.
 			emtAccepted(msg.skypeid, msg.webId);
@@ -198,6 +187,11 @@ wss.on('connection', function(client) {
 			payload['handle'] = msg.handle;
 			payload['message'] = JSON.stringify(msg);
 			sendMessageToWeb(payload, msg.docId);
+		} else if (msg.type == 'endCall') {
+			//Received notification that doctor has finished call.
+			//Update the number of available doctors.
+			console.log("Received endCall from: " + msg.webId);
+			availDocs++;
 		}
 	});
 });
