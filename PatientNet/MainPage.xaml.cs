@@ -23,7 +23,6 @@
     using Windows.Storage;
     using System.Net.Http;
     using System.Net.Http.Headers;
-    using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -62,7 +61,7 @@
         private const string skypeNameFile = ".skype.txt";
 
         private DispatcherTimer availableDoctorTimer = new DispatcherTimer();
-        TimeSpan doctorTimerInterval = TimeSpan.FromMinutes(1);  // Query every minute
+        TimeSpan doctorTimerInterval = TimeSpan.FromSeconds(30);  // Query every 30 seconds
 
         private int oldPhoneLength = 0;  // Used to determine if change was insert or delete
         private bool skypeFocused = false;
@@ -74,6 +73,9 @@
         private delegate void EnterEventHandler(object sender, EnterEventArgs e);
         private event EnterEventHandler EnterPressed;  // Invoke on enter
 
+        /// <summary>
+        /// Initializes page state upon opening the application
+        /// </summary>
         public MainPage()
         {
             this.InitializeComponent();
@@ -94,6 +96,9 @@
             QueryAvailableDoctors(null, null);  // Initial query for available doctors
         }
 
+        /// <summary>
+        /// Initializes the base url to connect to the server
+        /// </summary>
         private void InitHttpClient()
         {
             this.httpClient = new HttpClient
@@ -105,6 +110,9 @@
             this.httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
         }
 
+        /// <summary>
+        /// Returns the number of doctors available to service an EMT's request
+        /// </summary>
         private async void QueryAvailableDoctors(object sender, object e)
         {
             this.logger.Log("Querying available doctors");
@@ -116,6 +124,7 @@
             // API Call
             if (response.IsSuccessStatusCode)
             {
+                this.logger.Log(response.Content.ReadAsStringAsync().Result);
                 var responseBody = response.Content.ReadAsStringAsync().Result;
                 JObject s = JObject.Parse(responseBody);
                 int numAvailableDoctors = (int)s["availableDoctors"];
@@ -127,6 +136,9 @@
             }
         }
 
+        /// <summary>
+        /// Auto-populates the skype name box with the last name entered
+        /// </summary>
         private async void LoadSavedData()
         {
             try
@@ -142,7 +154,7 @@
         }
 
         /// <summary>
-        /// Used to send phone numbers and skype names
+        /// Used to send skype names, phone numbers, and email addresses
         /// </summary>
         private async void SendHTTP(string endpoint, Dictionary<MessageType, string> sendTypes)
         {
@@ -164,26 +176,23 @@
                 string skypeString = "skypeid";
                 string numberString = "number";
 
-                if (sendTypes.Count == 1)
+                bool contains_email = sendTypes.ContainsKey(MessageType.Email);
+                bool contains_skype = sendTypes.ContainsKey(MessageType.Skype);
+                bool contains_number = sendTypes.ContainsKey(MessageType.Number);
+
+                if (sendTypes.Count == 1 && contains_skype)
                 {
-                    if (sendTypes.ContainsKey(MessageType.Skype))
-                    {
-                        info = $"{{ \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
-                        success_message = success_message_doctor;
-                    }
-                    else
-                    {
-                        return;
-                    }
+                    info = $"{{ \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                    success_message = success_message_doctor;
                 }
                 else if (sendTypes.Count == 2)
                 {
-                    if (sendTypes.ContainsKey(MessageType.Email) && sendTypes.ContainsKey(MessageType.Skype))
+                    if (contains_email && contains_skype)
                     {
                         info = $"{{ \"{emailString}\": \"{sendTypes[MessageType.Email]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
                         success_message = success_message_both;
                     }
-                    else if (sendTypes.ContainsKey(MessageType.Number) && sendTypes.ContainsKey(MessageType.Skype))
+                    else if (contains_number && contains_skype)
                     {
                         info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
                         success_message = success_message_both;
@@ -251,6 +260,9 @@
             this.logger.Log($"OnEnterPressed: Removed {e.Type} from entersPressed set");
         }
 
+        /// <summary>
+        /// Handles when the EMT clicks the submit button
+        /// </summary>
         private void RequestDoctors_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(SkypeName.Text))
@@ -460,8 +472,6 @@
 
         private void Contact_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            // UserHelpText.Text = "Notify Emergency Contact sends a text or email to the specified number containing a link to the emergency contact PatientNet portal.";
-            // UserHelpText.Text = "Please enter either the emergency contact's phone number or email address (or both). A text or email to the specified number containing a link to the emergency contact PatientNet portal.";
             UserHelpContact.Visibility = Visibility.Visible;
         }
 
