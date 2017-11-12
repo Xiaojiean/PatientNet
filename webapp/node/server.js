@@ -51,6 +51,7 @@ app.post('/api/v1/requestdoctor', function(req, res) {
 	obj['skypeid'] = req.body.skypeid;
 	obj['email'] = req.body.email;
 	obj['number'] = req.body.number;
+	obj['requestTime'] = new Date();
 	obj['message'] = JSON.stringify(req.body);
 	emts.push(obj);
 	sendMessage(obj);
@@ -58,11 +59,11 @@ app.post('/api/v1/requestdoctor', function(req, res) {
 });
 
 app.post('/api/v1/getavailabledoctors', function(req, res) {
-	console.log('/api/v1/getavailabledoctors received: ' + JSON.stringify(req.body));
-	updateClients();
+	console.log('/api/v1/getavailabledoctors received: ' + json.stringify(req.body));
+	updateclients();
 	var obj = {};
-	obj['availableDoctors'] = availDocs;
-	res.status(200).send(JSON.stringify(obj));
+	obj['availabledoctors'] = availdocs;
+	res.status(200).send(json.stringify(obj));
 });
 
 function emtAccepted(emtId, webId) {

@@ -37,7 +37,8 @@
 	    </div>
 	    <div id="navbarCollapse" class="collapse navbar-collapse height">
 		<ul class="nav navbar-nav navbar-right">
-		    <li><a href="#" onclick="startIntro()">Tour This Page</a></li>
+		    <li><a id="stats" href="#" onclick="openStats()">Stats</a></li>
+		    <li><a id="help" href="#" onclick="startIntro()">Tour This Page</a></li>
 	        </ul>
 	    </div>
         </div>
@@ -62,6 +63,21 @@
 		<button id="refreshButton" onclick="refreshTable()">Refresh Table</button>
 	</div>
 	-->
+	<div id="statsModal" class="modal">
+		<div class="modal-content">
+			<span id="closeStats">&times;</span>
+			<table style="width:100%">
+				<tr>
+					<td>Number of Requests Served Today</td>
+					<td id="reqsToday">3</td>
+				</tr>
+				<tr>
+					<td>Average EMT wait time</td>
+					<td id="avgWait">2:04</td>
+				</tr>
+			</table>
+		</div>
+	</div>
 	<div id="filelistdiv">
 		<p id="filesHelp" style="display:none; text-align:center">View the files uploaded by the emergency contact. These will be deleted when you end the conversation.</p>
 		<ul id="fileslist">
@@ -92,6 +108,8 @@
     var emtObjects = [];
     var currConversation = null;
     var signedIn = false;
+    var numHelped = 0;
+    var avgWaitSec = 0;
     var initialOptions = [
 	    {
 	        element: document.getElementById('listdiv'),
@@ -101,6 +119,10 @@
 	        element: document.getElementById('emtlist'),
 	        intro: "Select an EMT to create an anonymous Skype meeting for the emergency contact and a Skype call with the EMT."
 	    },
+	    {
+		element: document.getElementById('stats'),
+		intro: "Click to view statistics from this session such as number of requests served and average EMT wait time."
+	    }
 	  ];
     var convoOptions = [
 		{
@@ -135,6 +157,39 @@
 	var tmp = iframe.src;
 	iframe.src = "https://481patientnet.com/blank.html?" + tmp;
     }
+
+    function secToHHMMSS(seconds) {
+	var secs = parseInt(seconds % 60);
+	var mins = parseInt((seconds/60)%60)
+	var hrs = parseInt((seconds/(60*60))%24);
+	if (hrs < 10) {
+		hrs = "0" + hrs;  
+	}
+	if (mins < 10) {
+		mins = "0" + mins;
+	}
+	if (secs < 10) {
+		secs = "0" + secs;
+	}
+	return hrs + ":" + mins + ":" + secs;
+    }
+
+    function openStats() {
+	var modal = document.getElementById('statsModal');
+	var closeSpan = document.getElementById('closeStats');	
+	closeSpan.onclick=(function(){
+		modal.style.display = "none";
+	});
+	// When the user clicks anywhere outside of the modal, close it
+	window.onclick = function(event) {
+		if (event.target == modal) {
+			modal.style.display = "none";
+		}
+	}
+	document.getElementById('reqsToday').innerHTML=numHelped;
+	document.getElementById('avgWait').innerHTML=secToHHMMSS(avgWaitSec);
+	modal.style.display = "block";
+    }
      
     /*
        When the doctor ends the call, we need to show the list of waiting EMTs, delete all shared files, and remove the conversation window.
@@ -158,6 +213,7 @@
 		document.getElementById('filesHelp').style.display = "none";
 		state = STATE.INITIAL;
 		document.getElementById('help').onclick=startIntro;
+		document.getElementById('stats').onclick=openStats;
           	document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + MESSAGE.INITIAL;
 
 	  	//Let server know that this doctor is available again.
@@ -281,6 +337,7 @@
 	  		      	emtObj['id'] = signal.skypeid;
 	  		      	emtObj['email'] = signal.email;
 	  		      	emtObj['number'] = signal.number;
+				emtObj['requestTime'] = new Date(signal.requestTime);
 	  			emtObjects.push(emtObj);
 			      }
 			      addToEmtList(emtObj);
@@ -361,6 +418,15 @@
 		ul.style.display = "none";
 		state = emtObj.id;
 		document.getElementById('help').onclick=startIntro;
+	  	numHelped++;
+		var now = new Date();
+		var secs = (now.getTime() - emtObj.requestTime.getTime())/1000;
+		console.log("Clicked time: " + now + ". Seconds: " + secs);
+		if (numHelped == 1) {
+			avgWaitSec += secs;
+		} else {
+	  		avgWaitSec = (avgWaitSec + secs)/2;
+		}
 	  });
 	}
 	if (appendItem) {
