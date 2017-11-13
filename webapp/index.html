@@ -75,6 +75,10 @@
 					<td>Average EMT wait time</td>
 					<td id="avgWait">2:04</td>
 				</tr>
+				<tr>
+					<td>Average Conversation Length</td>
+					<td id="avgCall">2:04</td>
+				</tr>
 			</table>
 		</div>
 	</div>
@@ -102,15 +106,16 @@
     var orgId = "patientnet2";
     var hostId = null;
     var meetingId = null;
-    var googleApiKey = "AIzaSyBSb9EvtAm8Ntcj5-Rt4L-9gqMeJmMj7kA";
     var webId = null;
     var fileHandles = [];
     var emtObjects = [];
     var currConversation = null;
     var signedIn = false;
+    var callStart = null;
     var stats = {
     	numHelped: 0,
-       	avgWaitSec: 0
+	avgWaitSec: 0,
+	avgCallSec: 0
     }
     var initialOptions = [
 	    {
@@ -190,6 +195,7 @@
 	}
 	document.getElementById('reqsToday').innerHTML=stats.numHelped;
 	document.getElementById('avgWait').innerHTML=secToHHMMSS(stats.avgWaitSec);
+	document.getElementById('avgCall').innerHTML=secToHHMMSS(stats.avgCallSec);
 	modal.style.display = "block";
     }
       
@@ -236,6 +242,15 @@
 		obj['webId'] = webId;
 	  	console.log("Sending endMessage: " + JSON.stringify(obj));
 		wsc.send(JSON.stringify(obj));
+
+		//Update call length statistic.
+		var now = new Date();
+		var secs = (now.getTime() - callStart.getTime())/1000;
+		if (stats.numHelped == 1) {
+			stats.avgCallSec += secs;
+		} else {
+	  		stats.avgCallSec = (stats.avgCallSec + secs)/2;
+		}
 
 	        sendStats();
 	    }
@@ -441,9 +456,9 @@
 		state = emtObj.id;
 		document.getElementById('help').onclick=startIntro;
 	  	stats.numHelped++;
-		var now = new Date();
-		var secs = (now.getTime() - emtObj.requestTime.getTime())/1000;
-		console.log("Clicked time: " + now + ". Seconds: " + secs);
+		callStart = new Date();
+		var secs = (callStart.getTime() - emtObj.requestTime.getTime())/1000;
+		console.log("Clicked time: " + callStart + ". Seconds: " + secs);
 		if (stats.numHelped == 1) {
 			stats.avgWaitSec += secs;
 		} else {
@@ -612,7 +627,7 @@
       */
       function shortenUrl(longUrl, callbackArgs, _sendMessageCallback) {	
 	      var req = new XMLHttpRequest();
-	      req.open("POST", "https://www.googleapis.com/urlshortener/v1/url?key="+googleApiKey);
+	      req.open("POST", "https://www.googleapis.com/urlshortener/v1/url?key="+config.googleApiKey);
 	      req.setRequestHeader("Content-Type", "application/json");
 	      req.send(JSON.stringify({ "longUrl": longUrl }));
 	      req.onreadystatechange = function() {
