@@ -285,11 +285,18 @@
         intro.start();
       }
 
+      window.onunload = (function(){
+	      if (state != STATE.INITIAL) {
+	        //If we're in a call when we close out, send a message to client to end call.
+		var obj = {};
+		obj['type'] = 'endCall';
+		obj['webId'] = webId;
+	  	console.log("Sending endMessage: " + JSON.stringify(obj));
+		wsc.send(JSON.stringify(obj));
+	      }
+      });
 
     (function () {
-	if(!webId) {
-		webId = guid();
-	}
 	if (!location.href.includes("access_token")) {
 		location.assign(
 		    config.loginurl+
@@ -303,13 +310,7 @@
     	      wsc.onmessage = function(evt) {
 		      var signal = JSON.parse(evt.data);
 		      console.log("Server received message: " + signal.message);
-		      if (signal.type == 'hello') {
-			var obj = {};
-			obj['type'] = 'hello';
-			obj['webId'] = webId;
-			console.log("Id: " + webId);
-			wsc.send(JSON.stringify(obj));
-	      	      } else if (signal.type == 'request') {
+		      if (signal.type == 'request') {
 			      //skypeid = signal.skypeid;
 			      var isNew = true;
 	  		      var emtObj = {};
@@ -537,18 +538,6 @@
       }
       
       /*
-	 Create unique ID for this browser session.
-      */
-      function guid(){
-      	function s4() {
-		return Math.floor((1+ Math.random()) * 0x10000)
-			.toString(16)
-			.substring(1);
-	}
-	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
-      }
-
-      /*
       Initializing Skype Web SDK & Conversation Control.
       On success, will login in the user to Sype as well by making a callback.
       */
@@ -558,7 +547,6 @@
               contactClient = api.UIApplicationInstance;
 	      initHandlers(contactClient);
 	      _loginCallback();
-
           }, function(err){
             console.log(err); 
           });
@@ -582,6 +570,15 @@
 	  document.getElementById('emtlist').style.display = "block";
 	  document.getElementById('loader').style.display = "none";
 	  signedIn = true;
+	  if(!webId) {
+		webId = contactClient.personsAndGroupsManager.mePerson.id();
+	  	//Send client hello to server.
+	  	var obj = {};
+	  	obj['type'] = 'hello';
+	  	obj['webId'] = webId;
+	  	console.log("Id: " + webId);
+	  	wsc.send(JSON.stringify(obj));
+	  }
 	  //loadChat();
 	  //scheduleMeeting();
         },function(error){
