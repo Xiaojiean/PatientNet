@@ -108,8 +108,10 @@
     var emtObjects = [];
     var currConversation = null;
     var signedIn = false;
-    var numHelped = 0;
-    var avgWaitSec = 0;
+    var stats = {
+    	numHelped: 0,
+       	avgWaitSec: 0
+    }
     var initialOptions = [
 	    {
 	        element: document.getElementById('listdiv'),
@@ -186,9 +188,21 @@
 			modal.style.display = "none";
 		}
 	}
-	document.getElementById('reqsToday').innerHTML=numHelped;
-	document.getElementById('avgWait').innerHTML=secToHHMMSS(avgWaitSec);
+	document.getElementById('reqsToday').innerHTML=stats.numHelped;
+	document.getElementById('avgWait').innerHTML=secToHHMMSS(stats.avgWaitSec);
 	modal.style.display = "block";
+    }
+      
+    /*
+         Send call statistics to the server.
+    */
+    function sendStats(){
+        var obj = {};
+        obj['type'] = 'stats';
+        obj['webId'] = webId;
+        obj['stats'] = JSON.stringify(stats);
+        console.log("Sending stats: " + JSON.stringify(obj));
+        wsc.send(JSON.stringify(obj));
     }
      
     /*
@@ -222,6 +236,8 @@
 		obj['webId'] = webId;
 	  	console.log("Sending endMessage: " + JSON.stringify(obj));
 		wsc.send(JSON.stringify(obj));
+
+	        sendStats();
 	    }
     }
       
@@ -294,6 +310,7 @@
 	  	console.log("Sending endMessage: " + JSON.stringify(obj));
 		wsc.send(JSON.stringify(obj));
 	      }
+	      sendStats();
       });
 
     (function () {
@@ -310,7 +327,11 @@
     	      wsc.onmessage = function(evt) {
 		      var signal = JSON.parse(evt.data);
 		      console.log("Server received message: " + signal.message);
-		      if (signal.type == 'request') {
+		      if (signal.type == 'stats'){
+		              //Received stored statistics from server.
+		      	      console.log("Received stats: " + signal.stats);
+			      stats = JSON.parse(signal.stats);
+		      } else if (signal.type == 'request') {
 			      //skypeid = signal.skypeid;
 			      var isNew = true;
 	  		      var emtObj = {};
@@ -419,14 +440,14 @@
 		ul.style.display = "none";
 		state = emtObj.id;
 		document.getElementById('help').onclick=startIntro;
-	  	numHelped++;
+	  	stats.numHelped++;
 		var now = new Date();
 		var secs = (now.getTime() - emtObj.requestTime.getTime())/1000;
 		console.log("Clicked time: " + now + ". Seconds: " + secs);
-		if (numHelped == 1) {
-			avgWaitSec += secs;
+		if (stats.numHelped == 1) {
+			stats.avgWaitSec += secs;
 		} else {
-	  		avgWaitSec = (avgWaitSec + secs)/2;
+	  		stats.avgWaitSec = (stats.avgWaitSec + secs)/2;
 		}
 	  });
 	}

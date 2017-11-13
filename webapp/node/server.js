@@ -8,7 +8,8 @@ const WebSocketServer = require('ws').Server,
 	http = require('https'),
 	app = express(),
 	fs = require('fs'),
-	config = require('./config.js');
+	config = require('./config.js'),
+	schedule = require('node-schedule');
 
 var cfg = {
 	ssl: true,
@@ -20,6 +21,12 @@ var availDocs = 0; //Number of available doctors.
 var emts = [];
 //Keys for TWilio
 var twilioClient = require('twilio')(config.twilioSid, config.twilioKey);
+var stats = {};
+
+schedule.scheduleJob('0 0 0 * * *', function(){
+	//Everyday at midnight, reset the statistics.
+	stats = {};
+});
 
 //Keys for SendGrid
 const sgMail = require('@sendgrid/mail');
@@ -146,6 +153,15 @@ wss.on('connection', function(client) {
 				client.send(JSON.stringify(emts[i]));
 			}
 			availDocs++;
+			if (msg.webId in stats) {
+				var obj = {};
+				obj['type'] = 'stats';
+				obj['stats'] = JSON.stringify(stats[msg.webId]);
+				console.log("Sending stats to: " + msg.webId);
+				client.send(JSON.stringify(obj));
+			} else {
+				stats[msg.webId] = {};
+			}
 		} else if(msg.type == 'sms'){
 			//Received request to send SMS.
 			emtAccepted(msg.skypeid, msg.webId);
@@ -193,6 +209,12 @@ wss.on('connection', function(client) {
 			//Update the number of available doctors.
 			console.log("Received endCall from: " + msg.webId);
 			availDocs++;
+		} else if (msg.type == 'stats') {
+			//Received the stats from a doctor.
+			//Update today's statistics.
+			console.log("Received stats from: " + msg.webId);
+			console.log("Stats: " + msg.stats);
+			stats[msg.webId] = JSON.parse(msg.stats);
 		}
 	});
 });
