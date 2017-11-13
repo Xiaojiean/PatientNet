@@ -59,11 +59,11 @@ app.post('/api/v1/requestdoctor', function(req, res) {
 });
 
 app.post('/api/v1/getavailabledoctors', function(req, res) {
-	console.log('/api/v1/getavailabledoctors received: ' + json.stringify(req.body));
-	updateclients();
+	console.log('/api/v1/getavailabledoctors received: ' + JSON.stringify(req.body));
+	updateClients();
 	var obj = {};
-	obj['availabledoctors'] = availdocs;
-	res.status(200).send(json.stringify(obj));
+	obj['availabledoctors'] = availDocs;
+	res.status(200).send(JSON.stringify(obj));
 });
 
 function emtAccepted(emtId, webId) {
