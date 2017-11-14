@@ -16,7 +16,7 @@ var cfg = {
 	ssl_key: './ssl/privkey.pem',
 	ssl_cert:'./ssl/fullchain.pem'
 };
-var wsClients = {};
+var wsClients = {}; //Stores a map of doctor IDs to a map of web session IDs to web socket clients.
 var availDocs = 0; //Number of available doctors.
 var emts = [];
 //Keys for TWilio
@@ -89,26 +89,34 @@ function emtAccepted(emtId, webId) {
 
 function sendMessage(obj){
 	updateClients();
-	if(wsClients.length == 0) {
+	if(Object.keys(wsClients).length == 0) {
 		//res.status(500).send("No doctors connected");
 		return;
 	}
 	for (var key in wsClients) {
-		var cli = wsClients[key];
-		if(cli.readyState == cli.OPEN) {
-			console.log("Sending obj: " + JSON.stringify(obj) + " to key: " + key);
-			cli.send(JSON.stringify(obj));
+		var cliList = wsClients[key];
+		for (var i in cliList) {
+			var cli = cliList[i];	
+			if(cli.readyState == cli.OPEN) {
+				console.log("Sending obj: " + JSON.stringify(obj) + " to key: " + key);
+				cli.send(JSON.stringify(obj));
+			}
 		}
 	}
 }
 
-function sendMessageToWeb(obj, id) {
+function sendMessageToWeb(obj, docId, webId) {
 	for (var key in wsClients) {
-		if (key == id){	
-			var cli = wsClients[key];
-			if(cli.readyState == cli.OPEN) {
-				console.log("Sending obj: " + JSON.stringify(obj) + " to key: " + key);
-				cli.send(JSON.stringify(obj));
+		if (key == docId){	
+			var cliList = wsClients[key];
+			for (var i in cliList) {
+				if (i == webId) {
+					var cli = cliList[i];
+					if(cli.readyState == cli.OPEN) {
+						console.log("Sending obj: " + JSON.stringify(obj) + " to key: " + key);
+						cli.send(JSON.stringify(obj));
+					}
+				}
 			}
 		}
 	}	
@@ -118,13 +126,19 @@ function sendMessageToWeb(obj, id) {
 function updateClients() {
 	var tmp = {};
 	for (var key in wsClients) {
-		var cli = wsClients[key];
-		if(cli.readyState != cli.OPEN) {
-			console.log("Removing id: " + key);
-			delete wsClients[cli];
-			availDocs--;
-		} else {
-			tmp[key] = cli;
+		var cliList = wsClients[key];
+		for (var i in cliList) {
+			var cli = cliList[i];
+			if(cli.readyState != cli.OPEN) {
+				console.log("Removing id: " + i);
+				delete cliList[cli];
+				availDocs--;
+			} else {
+				if(!(key in tmp)){
+					tmp[key] = {};
+				}
+				tmp[key][i] = cli;
+			}
 		}
 	}
 	wsClients = tmp;
@@ -147,20 +161,25 @@ wss.on('connection', function(client) {
 	client.on('message', function(message) {
 		var msg = JSON.parse(message);
 		if (msg.type == 'hello') {
-			console.log("received id: " + msg.webId);
-			wsClients[msg.webId] = client;
+			console.log("received doc id: " + msg.docId, " webId: " + msg.webId);
+			if(!(msg.docId in wsClients)) {
+				//We haven't seen this doctor yet.
+				//Create an object that maps the web session IDs to web socket clients.
+				wsClients[msg.docId] = {};
+			}
+			wsClients[msg.docId][msg.webId] = client;
 			for (var i = 0; i < emts.length; i++) {
 				client.send(JSON.stringify(emts[i]));
 			}
 			availDocs++;
-			if (msg.webId in stats) {
+			if (msg.docId in stats) {
 				var obj = {};
 				obj['type'] = 'stats';
-				obj['stats'] = JSON.stringify(stats[msg.webId]);
-				console.log("Sending stats to: " + msg.webId);
+				obj['stats'] = JSON.stringify(stats[msg.docId]);
+				console.log("Sending stats to: " + msg.docId);
 				client.send(JSON.stringify(obj));
 			} else {
-				stats[msg.webId] = {};
+				stats[msg.docId] = {};
 			}
 		} else if(msg.type == 'sms'){
 			//Received request to send SMS.
@@ -194,7 +213,7 @@ wss.on('connection', function(client) {
 			payload['filename'] = msg.filename;
 			payload['handle'] = msg.handle;
 			payload['message'] = JSON.stringify(msg);
-			sendMessageToWeb(payload, msg.docId);
+			sendMessageToWeb(payload, msg.docId, msg.webId);
 		} else if (msg.type == 'delete') {
 			//Received request from contact to delete a photo.
 			//Notify the corresponding doctor web session.
@@ -203,7 +222,7 @@ wss.on('connection', function(client) {
 			payload['filename'] = msg.filename;
 			payload['handle'] = msg.handle;
 			payload['message'] = JSON.stringify(msg);
-			sendMessageToWeb(payload, msg.docId);
+			sendMessageToWeb(payload, msg.docId, msg.webId);
 		} else if (msg.type == 'endCall') {
 			//Received notification that doctor has finished call.
 			//Update the number of available doctors.
@@ -214,7 +233,7 @@ wss.on('connection', function(client) {
 			//Update today's statistics.
 			console.log("Received stats from: " + msg.webId);
 			console.log("Stats: " + msg.stats);
-			stats[msg.webId] = JSON.parse(msg.stats);
+			stats[msg.docId] = JSON.parse(msg.stats);
 		}
 	});
 });

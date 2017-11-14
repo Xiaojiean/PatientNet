@@ -107,6 +107,7 @@
     var hostId = null;
     var meetingId = null;
     var webId = null;
+    var docId = null;
     var fileHandles = [];
     var emtObjects = [];
     var currConversation = null;
@@ -206,6 +207,7 @@
         var obj = {};
         obj['type'] = 'stats';
         obj['webId'] = webId;
+	obj['docId'] = docId;
         obj['stats'] = JSON.stringify(stats);
         console.log("Sending stats: " + JSON.stringify(obj));
         wsc.send(JSON.stringify(obj));
@@ -240,6 +242,7 @@
 		var obj = {};
 		obj['type'] = 'endCall';
 		obj['webId'] = webId;
+		obj['docId'] = docId;
 	  	console.log("Sending endMessage: " + JSON.stringify(obj));
 		wsc.send(JSON.stringify(obj));
 
@@ -322,6 +325,7 @@
 		var obj = {};
 		obj['type'] = 'endCall';
 		obj['webId'] = webId;
+		obj['docId'] = docId;
 	  	console.log("Sending endMessage: " + JSON.stringify(obj));
 		wsc.send(JSON.stringify(obj));
 	      }
@@ -506,6 +510,7 @@
 	obj['link'] = shortLink;
 	obj['skypeid'] = emtName;
 	obj['webId'] = webId;
+	obj['docId'] = docId;
 	if(email) {
       		obj['email'] = email;
 		obj['type'] = 'email';
@@ -572,6 +577,18 @@
 	      });
       
       }
+
+      /*
+	 Create unique ID for this browser session.		
+      */		
+      function guid(){		
+      	function s4() {		
+		return Math.floor((1+ Math.random()) * 0x10000)		
+			.toString(16)		
+			.substring(1);		
+	}		
+	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();		
+      }
       
       /*
       Initializing Skype Web SDK & Conversation Control.
@@ -608,10 +625,12 @@
 	  signedIn = true;
 	  if(!webId) {
 		webId = contactClient.personsAndGroupsManager.mePerson.id();
+		docId = guid();
 	  	//Send client hello to server.
 	  	var obj = {};
 	  	obj['type'] = 'hello';
-	  	obj['webId'] = webId;
+	  	obj['docId'] = docId;
+		obj['webId'] = webId;
 	  	console.log("Id: " + webId);
 	  	wsc.send(JSON.stringify(obj));
 	  }
@@ -655,7 +674,7 @@
 		var args = uri.split(/[@:]+/);
 		var hostId = args[1];
 		var meetingId = args[args.length-1];
-		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId + "&docId=" + webId;
+		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId + "&docId=" + docId + "&webId=" + webId;
 		shortenUrl(longUrl, callbackArgs, _sendMessageCallback);
 		var conversation = contactClient.conversationsManager.getConversationByUri(uri);
 		currConversation = conversation;
