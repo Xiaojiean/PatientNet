@@ -75,6 +75,10 @@
 					<td>Average EMT wait time</td>
 					<td id="avgWait">2:04</td>
 				</tr>
+				<tr>
+					<td>Average Conversation Length</td>
+					<td id="avgCall">2:04</td>
+				</tr>
 			</table>
 		</div>
 	</div>
@@ -102,14 +106,18 @@
     var orgId = "patientnet2";
     var hostId = null;
     var meetingId = null;
-    var googleApiKey = "AIzaSyBSb9EvtAm8Ntcj5-Rt4L-9gqMeJmMj7kA";
     var webId = null;
+    var docId = null;
     var fileHandles = [];
     var emtObjects = [];
     var currConversation = null;
     var signedIn = false;
-    var numHelped = 0;
-    var avgWaitSec = 0;
+    var callStart = null;
+    var stats = {
+    	numHelped: 0,
+	avgWaitSec: 0,
+	avgCallSec: 0
+    }
     var initialOptions = [
 	    {
 	        element: document.getElementById('listdiv'),
@@ -186,9 +194,23 @@
 			modal.style.display = "none";
 		}
 	}
-	document.getElementById('reqsToday').innerHTML=numHelped;
-	document.getElementById('avgWait').innerHTML=secToHHMMSS(avgWaitSec);
+	document.getElementById('reqsToday').innerHTML=stats.numHelped;
+	document.getElementById('avgWait').innerHTML=secToHHMMSS(stats.avgWaitSec);
+	document.getElementById('avgCall').innerHTML=secToHHMMSS(stats.avgCallSec);
 	modal.style.display = "block";
+    }
+      
+    /*
+         Send call statistics to the server.
+    */
+    function sendStats(){
+        var obj = {};
+        obj['type'] = 'stats';
+        obj['webId'] = webId;
+	obj['docId'] = docId;
+        obj['stats'] = JSON.stringify(stats);
+        console.log("Sending stats: " + JSON.stringify(obj));
+        wsc.send(JSON.stringify(obj));
     }
      
     /*
@@ -220,8 +242,20 @@
 		var obj = {};
 		obj['type'] = 'endCall';
 		obj['webId'] = webId;
+		obj['docId'] = docId;
 	  	console.log("Sending endMessage: " + JSON.stringify(obj));
 		wsc.send(JSON.stringify(obj));
+
+		//Update call length statistic.
+		var now = new Date();
+		var secs = (now.getTime() - callStart.getTime())/1000;
+		if (stats.numHelped == 1) {
+			stats.avgCallSec += secs;
+		} else {
+	  		stats.avgCallSec = (stats.avgCallSec + secs)/2;
+		}
+
+	        sendStats();
 	    }
     }
       
@@ -285,11 +319,20 @@
         intro.start();
       }
 
+      window.onunload = (function(){
+	      if (state != STATE.INITIAL) {
+	        //If we're in a call when we close out, send a message to client to end call.
+		var obj = {};
+		obj['type'] = 'endCall';
+		obj['webId'] = webId;
+		obj['docId'] = docId;
+	  	console.log("Sending endMessage: " + JSON.stringify(obj));
+		wsc.send(JSON.stringify(obj));
+	      }
+	      sendStats();
+      });
 
     (function () {
-	if(!webId) {
-		webId = guid();
-	}
 	if (!location.href.includes("access_token")) {
 		location.assign(
 		    config.loginurl+
@@ -303,13 +346,11 @@
     	      wsc.onmessage = function(evt) {
 		      var signal = JSON.parse(evt.data);
 		      console.log("Server received message: " + signal.message);
-		      if (signal.type == 'hello') {
-			var obj = {};
-			obj['type'] = 'hello';
-			obj['webId'] = webId;
-			console.log("Id: " + webId);
-			wsc.send(JSON.stringify(obj));
-	      	      } else if (signal.type == 'request') {
+		      if (signal.type == 'stats'){
+		              //Received stored statistics from server.
+		      	      console.log("Received stats: " + signal.stats);
+			      stats = JSON.parse(signal.stats);
+		      } else if (signal.type == 'request') {
 			      //skypeid = signal.skypeid;
 			      var isNew = true;
 	  		      var emtObj = {};
@@ -418,14 +459,14 @@
 		ul.style.display = "none";
 		state = emtObj.id;
 		document.getElementById('help').onclick=startIntro;
-	  	numHelped++;
-		var now = new Date();
-		var secs = (now.getTime() - emtObj.requestTime.getTime())/1000;
-		console.log("Clicked time: " + now + ". Seconds: " + secs);
-		if (numHelped == 1) {
-			avgWaitSec += secs;
+	  	stats.numHelped++;
+		callStart = new Date();
+		var secs = (callStart.getTime() - emtObj.requestTime.getTime())/1000;
+		console.log("Clicked time: " + callStart + ". Seconds: " + secs);
+		if (stats.numHelped == 1) {
+			stats.avgWaitSec += secs;
 		} else {
-	  		avgWaitSec = (avgWaitSec + secs)/2;
+	  		stats.avgWaitSec = (stats.avgWaitSec + secs)/2;
 		}
 	  });
 	}
@@ -469,6 +510,7 @@
 	obj['link'] = shortLink;
 	obj['skypeid'] = emtName;
 	obj['webId'] = webId;
+	obj['docId'] = docId;
 	if(email) {
       		obj['email'] = email;
 		obj['type'] = 'email';
@@ -535,19 +577,19 @@
 	      });
       
       }
-      
-      /*
-	 Create unique ID for this browser session.
-      */
-      function guid(){
-      	function s4() {
-		return Math.floor((1+ Math.random()) * 0x10000)
-			.toString(16)
-			.substring(1);
-	}
-	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
-      }
 
+      /*
+	 Create unique ID for this browser session.		
+      */		
+      function guid(){		
+      	function s4() {		
+		return Math.floor((1+ Math.random()) * 0x10000)		
+			.toString(16)		
+			.substring(1);		
+	}		
+	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();		
+      }
+      
       /*
       Initializing Skype Web SDK & Conversation Control.
       On success, will login in the user to Sype as well by making a callback.
@@ -558,7 +600,6 @@
               contactClient = api.UIApplicationInstance;
 	      initHandlers(contactClient);
 	      _loginCallback();
-
           }, function(err){
             console.log(err); 
           });
@@ -582,6 +623,17 @@
 	  document.getElementById('emtlist').style.display = "block";
 	  document.getElementById('loader').style.display = "none";
 	  signedIn = true;
+	  if(!webId) {
+		webId = contactClient.personsAndGroupsManager.mePerson.id();
+		docId = guid();
+	  	//Send client hello to server.
+	  	var obj = {};
+	  	obj['type'] = 'hello';
+	  	obj['docId'] = docId;
+		obj['webId'] = webId;
+	  	console.log("Id: " + webId);
+	  	wsc.send(JSON.stringify(obj));
+	  }
 	  //loadChat();
 	  //scheduleMeeting();
         },function(error){
@@ -594,7 +646,7 @@
       */
       function shortenUrl(longUrl, callbackArgs, _sendMessageCallback) {	
 	      var req = new XMLHttpRequest();
-	      req.open("POST", "https://www.googleapis.com/urlshortener/v1/url?key="+googleApiKey);
+	      req.open("POST", "https://www.googleapis.com/urlshortener/v1/url?key="+config.googleApiKey);
 	      req.setRequestHeader("Content-Type", "application/json");
 	      req.send(JSON.stringify({ "longUrl": longUrl }));
 	      req.onreadystatechange = function() {
@@ -622,7 +674,7 @@
 		var args = uri.split(/[@:]+/);
 		var hostId = args[1];
 		var meetingId = args[args.length-1];
-		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId + "&docId=" + webId;
+		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId + "&docId=" + docId + "&webId=" + webId;
 		shortenUrl(longUrl, callbackArgs, _sendMessageCallback);
 		var conversation = contactClient.conversationsManager.getConversationByUri(uri);
 		currConversation = conversation;

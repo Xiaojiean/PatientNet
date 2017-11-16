@@ -73,6 +73,7 @@
 	hostId = null,
 	meetingId = null,
 	docId = null,
+	webId = null,
 	contact = "Emergency Contact";
     
     var cfg = {
@@ -123,6 +124,7 @@
 			    var obj = {};
 			    obj['type'] = 'upload';
 			    obj['docId'] = docId;
+			    obj['webId'] = webId;
 			    obj['filename'] = f.filename;
 			    obj['handle'] = f.handle;
 		            wsc.send(JSON.stringify(obj));
@@ -173,6 +175,7 @@
 		var obj = {};
 		obj['type'] = 'delete';
 		obj['docId'] = docId;
+		obj['webId'] = webId;
 		obj['filename'] = fileName;
 		obj['handle'] = handle;
 		wsc.send(JSON.stringify(obj));
@@ -245,6 +248,7 @@
 	hostId = args[3];
 	meetingId = args[5];
 	docId = args[7];
+	webId = args[9];
       skypeInit(anonymousLogin);
 
       /*
