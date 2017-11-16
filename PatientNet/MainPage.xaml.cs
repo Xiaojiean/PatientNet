@@ -249,6 +249,9 @@
             }
         }
 
+        /// <summary>
+        /// Prevents the HoloLens' click-twice anomaly
+        /// </summary>
         private async void OnRequestSent(object sender, RequestEventArgs e)
         {
             e.Set.Add(e.Content);
@@ -260,6 +263,9 @@
             this.logger.Log($"OnRequestSent: Removed {e.Content} from {nameof(e.Set)}");
         }
 
+        /// <summary>
+        /// Prevents the HoloLens' click-twice anomaly
+        /// </summary>
         private async void OnEnterPressed(object sender, EnterEventArgs e)
         {
             this.entersPressed.Add(e.Type);
@@ -347,6 +353,9 @@
             }
         }
 
+        /// <summary>
+        /// Prevents the HoloLens' click-twice anomaly
+        /// </summary>
         private void Skype_KeyDownHandler(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
@@ -363,6 +372,9 @@
             }
         }
 
+        /// <summary>
+        /// Prevents the HoloLens' click-twice anomaly
+        /// </summary>
         private void Phone_KeyDownHandler(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
@@ -379,6 +391,9 @@
             }
         }
 
+        /// <summary>
+        /// Prevents the HoloLens' click-twice anomaly
+        /// </summary>
         private void Email_KeyDownHandler(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
@@ -443,6 +458,9 @@
             textBox.SelectionStart = oldSelectionStart;
         }
 
+        /// <summary>
+        /// Calls the phone string formatter whenever a user enters text
+        /// </summary>
         private void Phone_TextChanged(object sender, TextChangedEventArgs e)
         {
             var textBox = sender as TextBox;
@@ -451,12 +469,18 @@
             oldPhoneLength = textBox.Text.Length;
         }
 
+        /// <summary>
+        /// Displays user help information when Skype name textbox is clicked
+        /// </summary>
         private void SkypeName_GotFocus(object sender, RoutedEventArgs e)
         {
             this.skypeFocused = true;
             UserHelpSkype.Visibility = Visibility.Visible;
         }
 
+        /// <summary>
+        /// Hides user help information when cursor is removed from Skype name textbox
+        /// </summary>
         private void SkypeName_LostFocus(object sender, RoutedEventArgs e)
         {
             this.skypeFocused = false;
@@ -466,12 +490,18 @@
             }
         }
 
+        /// <summary>
+        /// Displays user help information when phone or email textbox are clicked
+        /// </summary>
         private void Contact_GotFocus(object sender, RoutedEventArgs e)
         {
             this.contactFocused = true;
             UserHelpContact.Visibility = Visibility.Visible;
         }
 
+        /// <summary>
+        /// Hides user help information when cursor is removed from phone or email textbox
+        /// </summary>
         private void Contact_LostFocus(object sender, RoutedEventArgs e)
         {
             this.contactFocused = false;
@@ -481,11 +511,17 @@
             }
         }
 
+        /// <summary>
+        /// Displays user help information when cursor hovers over phone or email textbox
+        /// </summary>
         private void Contact_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             UserHelpContact.Visibility = Visibility.Visible;
         }
 
+        /// <summary>
+        /// Hides user help information when cursor is removed from phone or email textbox
+        /// </summary>
         private void Contact_PointerExited(object sender, PointerRoutedEventArgs e)
         {
             if (!(this.helpOn || contactFocused))
@@ -494,11 +530,17 @@
             }
         }
 
+        /// <summary>
+        /// Displays user help information when cursor hovers over Skype name textbox
+        /// </summary>
         private void SkypeName_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             UserHelpSkype.Visibility = Visibility.Visible;
         }
 
+        /// <summary>
+        /// Hides user help information when cursor is removed from Skype name textbox
+        /// </summary>
         private void SkypeName_PointerExited(object sender, PointerRoutedEventArgs e)
         {
             if (!(this.helpOn || skypeFocused))
@@ -507,6 +549,9 @@
             }
         }
 
+        /// <summary>
+        /// Toggles the help menu when the help icon is clicked
+        /// </summary>
         private void HelpButtonClicked(object sender, RoutedEventArgs e)
         {
             if ((bool)this.HelpButton.IsChecked)
@@ -529,19 +574,9 @@
             }
         }
 
-        // TODO: Need to actually disable sounds of clicks
-        private void SoundButtonClicked(object sender, RoutedEventArgs e)
-        {
-            if ((bool)this.SoundButton.IsChecked)
-            {
-                SoundButtonPic.Source = new BitmapImage(new Uri("ms-appx:///Assets/No_Sound.png", UriKind.Absolute)); 
-            }
-            else
-            {
-                SoundButtonPic.Source = new BitmapImage(new Uri("ms-appx:///Assets/Sound.png", UriKind.Absolute));
-            }
-        }
-
+        /// <summary>
+        /// Notifies the user using the Usernotifications textbox
+        /// </summary>
         private async void NotifyUser(string content)
         {
             UserNotifications.Text = content;

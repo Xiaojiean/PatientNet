@@ -35,23 +35,8 @@
              HorizontalAlignment="Center"
              Margin="750,0,0,400"
              Click="HelpButtonClicked">
-             <ToggleButton.Content>
-                <Image Source="Assets/Help_Icon.png" Width="20"/>
-             </ToggleButton.Content>
-        </ToggleButton>
-
-        <!-- Button to Toggle Sound -->
-        <ToggleButton x:Name="SoundButton"
-             Grid.Column="1"
-             Width="40"
-             Height="30"
-             Background="Transparent"
-             VerticalAlignment="Center"
-             HorizontalAlignment="Center"
-             Margin="660,0,0,400"
-             Click="SoundButtonClicked">
             <ToggleButton.Content>
-                <Image x:Name="SoundButtonPic" Source="Assets/Sound.png" Width="20"/>
+                <Image Source="Assets/Help_Icon.png" Width="20"/>
             </ToggleButton.Content>
         </ToggleButton>
 
