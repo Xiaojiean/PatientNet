@@ -48,7 +48,8 @@
         private const string RequestDoctorsEndpoint = "api/v1/requestdoctor";
         private const string AvailableDoctorsEndpoint = "api/v1/getavailabledoctors";
 
-        private Logger logger = new Logger();
+        private Logger logger;
+        private const string LogFolder = ".logs";
         private HashSet<string> numbersSentTo = new HashSet<string>();
         private HashSet<string> emailsSentTo = new HashSet<string>();
         private HashSet<string> skypesSentTo = new HashSet<string>();
@@ -79,6 +80,16 @@
         public MainPage()
         {
             this.InitializeComponent();
+
+            string time = DateTime.Now.ToString("yyyyMMddHHmmss");
+            string logFolder = Path.Combine(storageFolder.Path, MainPage.LogFolder);
+            var filename = Path.Combine(MainPage.LogFolder, time + ".log");
+            if (!Directory.Exists(logFolder)) {
+                Directory.CreateDirectory(logFolder);
+            }
+
+            this.logger = new Logger(filename);
+
             this.SentRequest += this.OnRequestSent;
             this.EnterPressed += this.OnEnterPressed;
             Application.Current.Resources["ToggleButtonBackgroundChecked"] = new SolidColorBrush(Colors.Transparent);
@@ -127,7 +138,7 @@
                 this.logger.Log(response.Content.ReadAsStringAsync().Result);
                 var responseBody = response.Content.ReadAsStringAsync().Result;
                 JObject s = JObject.Parse(responseBody);
-                int numAvailableDoctors = (int)s["availableDoctors"];
+                int numAvailableDoctors = (int)s["availabledoctors"];
                 AvailableDoctors.Text = $"Available Doctors: {numAvailableDoctors}";
             }
             else
