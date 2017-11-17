@@ -27,7 +27,6 @@
     using System.Text;
     using System.Text.RegularExpressions;
     using System.IO;
-    using Windows.UI.Xaml.Media.Imaging;
 
     public enum MessageType
     {
@@ -47,6 +46,13 @@
         private const string SendEmailEndpoint = "api/v1/sendemail";
         private const string RequestDoctorsEndpoint = "api/v1/requestdoctor";
         private const string AvailableDoctorsEndpoint = "api/v1/getavailabledoctors";
+
+        private enum TextSize
+        {
+            Small = 15, Large = 20
+        };
+
+        private TextSize textSize = TextSize.Small;
 
         private Logger logger;
         private const string LogFolder = ".logs";
@@ -580,6 +586,15 @@
                 UserHelpContact.Visibility = Visibility.Collapsed;
                 this.helpOn = false;
             }
+        }
+
+        private void FontButtonClicked(object sender, RoutedEventArgs e)
+        {
+            // Toggle size
+            this.textSize = this.textSize == TextSize.Small ? TextSize.Large : TextSize.Small;
+
+            // Apply new size to all text
+            StepOne.FontSize = StepTwo.FontSize = StepThree.FontSize = (double)this.textSize;
         }
 
         /// <summary>
