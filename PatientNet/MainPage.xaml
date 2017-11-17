@@ -206,7 +206,7 @@
                     Opacity="0.78"
                     BorderBrush="SlateGray" 
                     BorderThickness="1">
-                        <TextBlock Text="Request Doctors" 
+                        <TextBlock Text="Notify Parties" 
                             Margin="10,6.5" 
                             Foreground="Black" FontFamily="Arial Rounded MT Bold"/>
                     </Border>
