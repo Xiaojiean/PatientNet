@@ -25,6 +25,21 @@
             <Bold> PatientNet </Bold>
         </TextBlock>
 
+        <!-- Button to Toggle Font Size -->
+        <ToggleButton x:Name="FontButton"
+             Grid.Column="1"
+             Width="45"
+             Height="35"
+             Background="Transparent"
+             VerticalAlignment="Center"
+             HorizontalAlignment="Center"
+             Margin="663,0,0,380"
+             Click="FontButtonClicked">
+            <ToggleButton.Content>
+                <Image Source="Assets/Font_Pic.png" Width="30"/>
+            </ToggleButton.Content>
+        </ToggleButton>
+
         <!-- Button to Display User Help -->
         <ToggleButton x:Name="HelpButton"
              Grid.Column="1"
