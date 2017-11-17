@@ -9,11 +9,10 @@
       * Username: PatientNet
       * Password: Chesney
     * Retrieve the latest version of PatientNet from PatientNet/AppPackages/ on this github page, and install the x86 version of the package (with its 2 dependencies) in the 'Apps' tab of the Windows Device Portal
-* Enter the phone number of the emergency contact into the 'Enter Phone Number' textbox. For more detailed instructions, hover the Hololens pointer over the textbox.
-* Click the 'Notify Emergency Contact' button to send a text message to the emergency contact, which contains a link to talk to the doctor.
-* Enter the EMT's skype name (eric.hwang8) into the 'Enter Skype Name' textbox. For more instructions, hover the Hololens pointer over the textbox.
-* Click the 'Notify All Doctors' button to notify all available doctors at the hospital from which the EMT services.
-* A doctor will respond to the Hololens notification, opening up a Skype call. Accept it to communicate with the doctor.
+* Enter the EMT's skype name (e.g. eric.hwang8) into the 'Enter Skype Name' textbox. For more instructions, hover the Hololens pointer over the textbox.
+* Enter the phone number and/or email address of the emergency contact into the 'Enter Contact Phone' and 'Enter Contact Email' textboxes, respectively. For more detailed instructions, hover the Hololens pointer over either textbox. 
+* Click the 'Notify Parties' button to request a doctor at the hospital and notify the emergency contact via text message, email, or both. Note that this request will be successful only if a skype name is entered. The contact information is not required, but is recommended.
+* For general help on using the applcation, click the question mark icon at the top right of the application.
 
 # Run web application as doctor
 
