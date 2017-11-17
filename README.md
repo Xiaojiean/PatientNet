@@ -23,38 +23,36 @@
 ```
 user: tsaoa@patientnet2.onmicrosoft.com
 pass: Patientnet123
+OR
+user: wmcayo@patientnet2.onmicrosoft.com
+pass: Patientnet123
 ```
-A meeting will be generated so the emergency contact can join.
-* Wait for emergency contact to join the meeting 
-  * Only audio calls are supported with the emergency contact
+There will be a list of EMT requests. Clicking on the EMT Skype name will automatically generate a meeting for the emergency contact and open Skype to call the EMT.
 
-* Wait for notification from EMT
-  * Note: You will need a <i>personal</i> Skype account and the classic [Skype Desktop app](https://www.skype.com/en/download-skype/skype-for-computer/) (the built-in Windows 10 Skype app doesn't support Hololens drawing)
-  * A Skype "Call" button will be created and clicking it will automatically call the EMT
-  * Both video and audio are supported for this call
+Note:
+  * Only audio calls are supported with the emergency contact
+  * You will need a <i>personal</i> Skype account and the classic [Skype Desktop app](https://www.skype.com/en/download-skype/skype-for-computer/) (the built-in Windows 10 Skype app doesn't support Hololens drawing)
+  * Both video and audio are supported for the call with the EMT
     * If the EMT's video is blank, please follow instructions [here](https://forums.hololens.com/discussion/2343/hololens-add-in-is-causing-black-screen) to remedy
 
 # To run web application as emergency contact
-* Go to the link texted to you
-  * The emergency contact's number will be provided by the EMT on the HoloLens
+* Go to the link texted and/or emailed to you
+  * The emergency contact's number and/or email will be provided by the EMT on the HoloLens
 * Fill out your name to join the meeting
 * Call the doctor
   * Note: Only audio calls are supported with the doctor
 
-<b> Access emergency contact page without a text</b>
+# Linux Commands to test API calls without using HoloLens
 
 There are two options to test the emergency contact's web page without sending a text from the HoloLens:
-1. Send a POST request from the terminal. On Linux:
+
+1. Send a request for a doctor:
 ```
-curl -i -X POST -H 'Content-Type: application/json' -d '{"number":[number]}' https://481patientnet.com:3001/api/v1/sendsms
+curl -i -X POST -H 'Content-Type: application/json' -d '{"skypeid":[id], "email":[example@user.com], "number":[number]}' https://481patientnet.com:3001/api/v1/requestdoctor
 ```
-2. Find the short url from the doctor's web page.
-   * On 481patientnet.com, open Developer's Settings to see the console.
-   * Look for the response object in the following format:
-   ```
-   Resp: {
-   	"kind": "urlshortener#url",
- 	"id": "https://goo.gl/nKJr8u",
- 	"longUrl": "http://481patientnet.com/client.html?org=patientnet2&user=tsaoa&id=CMYNVEIH"
-	}
-   ```
+Note: Only "skypeid" is required.
+
+2. Query the number of available doctors:
+```
+curl -i -X POST https://481patientnet.com:3001/api/v1/getavailabledoctors
+```
