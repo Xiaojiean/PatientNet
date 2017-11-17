@@ -130,10 +130,18 @@
             
             // Send empty content
             HttpContent content = new StringContent(string.Empty, Encoding.UTF8, MainPage.ContentType);
-            HttpResponseMessage response = await this.httpClient.PostAsync(this.httpClient.BaseAddress + AvailableDoctorsEndpoint, content);
+            HttpResponseMessage response = null;
+
+            try
+            {
+                response = await this.httpClient.PostAsync(this.httpClient.BaseAddress + AvailableDoctorsEndpoint, content);
+            }
+            catch (HttpRequestException ex) {
+                this.logger.Log("QueryAvailableDoctors: While querying for available doctors, got exception: " + ex.Message);
+            }
 
             // API Call
-            if (response.IsSuccessStatusCode)
+            if (response != null && response.IsSuccessStatusCode)
             {
                 this.logger.Log(response.Content.ReadAsStringAsync().Result);
                 var responseBody = response.Content.ReadAsStringAsync().Result;
@@ -236,7 +244,7 @@
                     // Save Skype name for future use
                     StorageFile storageFile = await this.storageFolder.CreateFileAsync(MainPage.skypeNameFile, CreationCollisionOption.ReplaceExisting);
                     await FileIO.WriteTextAsync(storageFile, sendTypes[MessageType.Skype]);
-                    this.logger.Log($"LoadSavedData: Wrote to {skypeNameFile} in path {ApplicationData.Current.LocalFolder.Path}");
+                    this.logger.Log($"SendHTTP: Wrote to {skypeNameFile} in path {ApplicationData.Current.LocalFolder.Path}");
                 }
                 else
                 {
@@ -245,7 +253,7 @@
             }
             catch (Exception ex)
             {
-                this.logger.Log($"Exception: {ex.Message}");
+                this.logger.Log($"SendHTTP: Got exception: {ex.Message}");
             }
         }
 
