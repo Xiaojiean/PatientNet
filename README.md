@@ -13,6 +13,7 @@
 * Enter the phone number and/or email address of the emergency contact into the 'Enter Contact Phone' and 'Enter Contact Email' textboxes, respectively. For more detailed instructions, hover the Hololens pointer over either textbox. 
 * Click the 'Notify Parties' button to request a doctor at the hospital and notify the emergency contact via text message, email, or both. Note that this request will be successful only if a skype name is entered. The contact information is not required, but is recommended.
 * For general help on using the applcation, click the question mark icon at the top right of the application.
+* To increase or decrease the font size, click the 'AA' icon on the top right of the application.
 
 # Run web application as doctor
 
