@@ -19,14 +19,8 @@
 
 * Go to [481patientnet.com](https://481patientnet.com)
 * Log in with doctor credentials:
-
-```
-user: tsaoa@patientnet2.onmicrosoft.com
-pass: Patientnet123
-OR
-user: wmcayo@patientnet2.onmicrosoft.com
-pass: Patientnet123
-```
+   * Email us for the passwords. We don't want them posted on Github.
+   
 There will be a list of EMT requests. Clicking on the EMT Skype name will automatically generate a meeting for the emergency contact and open Skype to call the EMT.
 
 Note:
