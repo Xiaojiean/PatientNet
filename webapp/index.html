@@ -21,10 +21,6 @@
 </head>
 <body>
     <div id="container">
-        <!--<div class="topnav">
-         <h1>PatientNet Site  <i class="fa fa-ambulance"></i></h1>
-         <a href="#" id="help" onclick="startIntro()">Tour This Page</a>
-        </div>-->
         <nav role="navigation" class="navbar navbar-default navbar-static-top">
             <div class="container">
                 <div class="navbar-header">
@@ -54,14 +50,6 @@
             </div>
             <div id="loader"></div>
             <div id="conversationWindow"></div>
-            <!--
-            <div class="iframeDiv">
-                <iframe id="fileTable" src="https://drive.google.com/embeddedfolderview?id=0B_Mq6umAVCRGdS1aLWdtV1ZTbEU#list" width="650" height="300"></iframe>
-            </div>
-            <div class="tableBar">
-                <button id="refreshButton" onclick="refreshTable()">Refresh Table</button>
-            </div>
-            -->
             <div id="statsModal" class="modal">
                 <div class="modal-content">
                     <span id="closeStats">&times;</span>
@@ -117,6 +105,7 @@
             avgWaitSec: 0,
             avgCallSec: 0
         }
+	//The elements for the page tour on the initial page.
         var initialOptions = [
             {
                 element: document.getElementById('listdiv'),
@@ -131,6 +120,7 @@
                 intro: "Click to view statistics from this session such as number of requests served and average EMT wait time."
             }
         ];
+	//The elements for the page tour on the conversation page.
         var convoOptions = [
             {
                 element: document.getElementById('conversationWindow'),
@@ -152,19 +142,20 @@
         var STATE = {
             INITIAL: "none",
         };
+	//state represents the state the doctor is in.
+	//If the doctor is in a conversation, state will be the skypeID of the EMT the doctor is helping.
+	//Else, the state will equal STATE.INITIAL.
         var state = STATE.INITIAL;
+	//The message to show when doctor is on the initial page and on the conversation page.
         var MESSAGE = {
             INITIAL: '. The following is a list of EMTs who have requested help. Select one to start a Skype conversation with the EMT and create a chat room for the emergency contact to join.',
             CONVO: '. Please wait for the Emergency contact to join the call. Note that only audio calls are supported with the emergency contact at this time.'
         };
 
 
-        function refreshTable() {
-            var iframe = document.getElementById('fileTable');
-            var tmp = iframe.src;
-            iframe.src = "https://481patientnet.com/blank.html?" + tmp;
-        }
-
+	/*
+	   Convert seconds to HH:MM:SS format.
+	*/
         function secToHHMMSS(seconds) {
             var secs = parseInt(seconds % 60);
             var mins = parseInt((seconds / 60) % 60)
@@ -181,6 +172,9 @@
             return hrs + ":" + mins + ":" + secs;
         }
 
+	/*
+	    openStats opens the Stats modal and populates the data.
+	*/
         function openStats() {
             var modal = document.getElementById('statsModal');
             var closeSpan = document.getElementById('closeStats');
@@ -350,7 +344,6 @@
                         console.log("Received stats: " + signal.stats);
                         stats = JSON.parse(signal.stats);
                     } else if (signal.type == 'request') {
-                        //skypeid = signal.skypeid;
                         var isNew = true;
                         var emtObj = {};
                         if (signal.skypeid == state) {
@@ -390,6 +383,7 @@
                     } else if (signal.type == 'upload') {
                         fileHandles.push(signal.handle);
                         addToFileList(signal.filename, signal.handle);
+			// Play a sound only if the list has already loaded.
                         if (signedIn) {
                             var audio = new Audio('./assets/received_file_sound.wav');
                             audio.play();
@@ -417,6 +411,9 @@
                 }, this);
             }
 
+	    /*
+	       setListItemStyling dynamically sets the CSS styling for a list item.
+	    */
             function setListItemStyling(li) {
                 li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; cursor:pointer; display: block";
                 li.onmouseenter = function () {
@@ -459,6 +456,8 @@
                         state = emtObj.id;
                         document.getElementById('help').onclick = startIntro;
                         stats.numHelped++;
+
+			// Calculate the amount of time it took to answer this request and calculate new average.
                         callStart = new Date();
                         var secs = (callStart.getTime() - emtObj.requestTime.getTime()) / 1000;
                         console.log("Clicked time: " + callStart + ". Seconds: " + secs);
@@ -479,6 +478,9 @@
 
             }
 
+	    /*
+	       Add a file to list.
+	    */
             function addToFileList(fileName, handle) {
                 var ul = document.getElementById('fileslist');
                 if (ul.getElementsByTagName('li')[0].id == 'emptyFileLi') {
@@ -501,8 +503,7 @@
 
 
             /*
-           Send a message to server with the shortlink to text or email.
-           Exactly one of email or smsNumber will be null.
+           Send a message to server with the shortlink to text and/or email.
             */
             function sendShortLink(shortLink, email, smsNumber, emtName) {
                 var obj = {};
@@ -624,7 +625,7 @@
                     if (!webId) {
                         docId = contactClient.personsAndGroupsManager.mePerson.id();
                         webId = guid();
-                        //Send client hello to server.
+                        //Send client hello to server with doctor ID and web session ID.
                         var obj = {};
                         obj['type'] = 'hello';
                         obj['docId'] = docId;
@@ -632,8 +633,6 @@
                         console.log("Id: " + webId);
                         wsc.send(JSON.stringify(obj));
                     }
-                    //loadChat();
-                    //scheduleMeeting();
                 }, function (error) {
                     console.log(error);
                 });
@@ -641,6 +640,8 @@
 
             /*
            Generate a short url with Google Url Shortener.
+	   _sendMessageCallback is the function used to send the short link that was generated.
+	   callbackArgs contains the emergency contact's email and/or number.
             */
             function shortenUrl(longUrl, callbackArgs, _sendMessageCallback) {
                 var req = new XMLHttpRequest();
@@ -664,7 +665,7 @@
                 document.getElementById("loader").style.display = "block";
                 var meeting = contactClient.conversationsManager.createMeeting()
                     .accessLevel("Everyone")
-                    .subject("Test meeting")
+                    .subject("Contact meeting")
                 meeting.onlineMeetingUri.get().then(function (uri) {
                     console.log("Started meeting. Uri: " + uri);
                     console.log("Started meeting. joinurl: " + meeting.joinUrl);
@@ -672,6 +673,7 @@
                     var args = uri.split(/[@:]+/);
                     var hostId = args[1];
                     var meetingId = args[args.length - 1];
+		    //Generate a long id with information needed for the contact page to join the same meeting.
                     var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId + "&docId=" + docId + "&webId=" + webId;
                     shortenUrl(longUrl, callbackArgs, _sendMessageCallback);
                     var conversation = contactClient.conversationsManager.getConversationByUri(uri);
@@ -684,13 +686,10 @@
             Render conversation control on outgoing call
             */
             function loadChat(conversation, sip, contain) {
-                //TODO: Show contact list instead of auto populating this contact.
                 var uris = null;
                 if (!conversation) {
                     uris = [sip];
                 }
-                //var container = document.createElement('convos');
-                //document.getElementById(contain).appendChild(container);
                 var container = document.createElement('div');
                 document.getElementById('conversationWindow').appendChild(container);
 
@@ -702,15 +701,13 @@
                     participants: uris
                 })
                 promise.then(function (conversation) {
-                    //Rendered successfully
-                    //Remove loader.
+                    //Chat rendered successfully.
+		    //Remove loader.
                     document.getElementById("loader").style.display = "none";
                     document.getElementById("fileslist").style.display = "block";
                     document.getElementById("filesHelp").style.display = "block";
 
                     conversation.chatService.start();
-                    //conversation.audioService.start();
-                    //conversation.videoService.start();
                     document.getElementById('emtlist').style.display = "none";
                     document.getElementById('SigninStatus').innerHTML = 'Hello Dr. ' + contactClient.personsAndGroupsManager.mePerson.displayName() + MESSAGE.CONVO;
                     document.getElementById('endCall').style.display = "block";

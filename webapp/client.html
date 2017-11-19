@@ -22,10 +22,6 @@
 </head>
 <body>
     <div id="container">
-        <!--<div class="topnav">
-         <h1>PatientNet Site  <i class="fa fa-ambulance"></i></h1>
-         <a href="#" id="help" onclick="startIntro()">Tour This Page</a>
-        </div>-->
         <nav role="navigation" class="navbar navbar-default navbar-static-top">
             <div class="container">
                 <div class="navbar-header">
@@ -48,7 +44,6 @@
             <div id="conversationWindow"></div>
             <div id="conversationContainer"></div>
             <div class="tableBar">
-                <!--<button class="button" onClick="window.open('https://script.google.com/a/umich.edu/macros/s/AKfycbxmEmVEfqLbqXyN3eRTGKXi4AbglO9Y-C_DZLP7XgoSxqO7em_c/exec');">Upload Files</button>-->
                 <button id="pickerButton" onclick="openPicker()" style="display:none">Upload Files</button>
             </div>
             <div id="filelistdiv">
@@ -73,33 +68,23 @@
             meetingId = null,
             docId = null,
             webId = null,
-            contact = "Emergency Contact";
+            contact = "Emergency Contact",
+	    wsc = null,
+            wsHost: 'wss://481patientnet.com:3001';
 
-        var cfg = {
-            wsHost: 'wss://481patientnet.com:3001'
-        };
-        wsc = null;
+	//The message to show when the contact.
         var MESSAGE = {
             INITIAL: '. You have been connected with a doctor. Feel free to call the doctor, but note that only audio calls are supported.'
         };
 
         window.onload = function () {
             console.log("URL BEFORE LOAD", window.location.href);
-            // When the page loads, log in the user to Office365 if not already logged in.
-            if (!location.href.includes("access_token")) {
-                /*location.assign(
-                    config.loginurl+
-                    '&client_id='+config.clientid+
-                        '&resource='+config.resource+
-                        '&redirect_uri='+ config.clientReplyurl
-                    );*/
-            }
             console.log("URL arguments:", window.location.search.substring(1));
             contact = prompt("Please enter your name", "Emergency Contact");
         };
 
         if (wsc == null) {
-            wsc = new WebSocket(cfg.wsHost);
+            wsc = new WebSocket(wsHost);
             wsc.onclose = function () {
                 console.log("Websocket connection closed.");
                 wsc = null;
@@ -108,6 +93,7 @@
 
         /*
        Initialize Filestack object and open Filestack picker to choose files to upload.
+       Allow up to 5 files be loaded at a time from the local computer, Google Drive, DropBox, and/or OneDrive.
         */
         var fsClient = filestack.init(config.filePickerApiKey, { policy: config.policy, signature: config.signature });
         function openPicker() {
@@ -132,6 +118,9 @@
             });
         }
 
+	/*
+	   setListItemStyling dynamically sets the CSS styling for a list item.
+	*/
         function setListItemStyling(li) {
             li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; cursor:pointer; display: block";
             li.onmouseenter = function () {
@@ -156,7 +145,7 @@
             li.innerHTML = fileName;
             //Add styling to list item.
             setListItemStyling(li);
-            //Open File in new window.
+            //On click, open File in new window.
             if (fileName != 'emptyFileLi') {
                 li.onclick = (function () {
                     window.open("https://www.filestackapi.com/api/file/" + handle + "?signature=" + config.signature + "&policy=" + config.policy, "_blank");
@@ -251,22 +240,8 @@
             skypeInit(anonymousLogin);
 
             /*
-            Grant app with Admin Consent
-            *//*
-            document.getElementById('AdminConsent').onclick= function(){
-              location.assign('https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token'+
-                '&client_id='+config.clientid+
-                '&redirect_uri='+config.clientReplyurl+
-                //'&response_mode=form_post'+ //Because it is static web page and cant' handle post method, I comment out it.
-                '&nonce=samplestring'+// You can add code to defend Replay Attack with nonce property
-                '&resource='+config.resource+
-                '&prompt=admin_consent'
-              );
-            };*/
-
-            /*
             Initializing Skype Web SDK & Conversation Control.
-            On success, will login in the user to Sype as well by making a callback.
+            On success, will login in the user to Skype as well by making a callback.
             */
             function skypeInit(_loginCallback) {
                 console.log("RUNNING SKYPE INIT");
@@ -337,7 +312,7 @@
             }
 
             /*
-           Anonymous sign-in.
+           Anonymous sign-in borrowed from https://msdn.microsoft.com/en-us/skype/trusted-application-api/docs/implementinganonymousclientwithskypewebsdk.
             */
             function anonymousLogin() {
                 var url = "https://meet.lync.com/" + org + "/" + hostId + "/" + meetingId;
@@ -376,19 +351,17 @@
             Render conversation control on outgoing call
             */
             function loadChat(conversation) {
-                //TODO: Show contact list instead of auto populating this contact.
-                var uris = ['sip:tsaoa@patientNet2.onmicrosoft.com'];
                 var container = document.createElement('div');
                 document.getElementById("conversationWindow").appendChild(container);
 
-                //render Conversation Control in a web page.
+                //Render Conversation Control in a web page.
                 var promise = apiManager.renderConversation(container, {
-                    //Start outgoing call with chat window
+                    //Start outgoing call with chat window.
                     modalities: ['Chat'],
                     conversation: conversation
                 })
                 promise.then(function (conversation) {
-                    //Rendered successfully
+                    //Rendered successfully. Update UI.
                     document.getElementById("loader").style.display = "none";
                     conversation.chatService.start();
                     document.getElementById('pickerButton').style.display = "block";
