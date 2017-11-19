@@ -595,6 +595,10 @@
 
             // Apply new size to all text
             StepOne.FontSize = StepTwo.FontSize = StepThree.FontSize = (double)this.textSize;
+            UserNotifications.FontSize = UserHelpContact.FontSize = UserHelpSkype.FontSize = (double)this.textSize;
+            EmailHeader.FontSize = SkypeHeader.FontSize = PhoneHeader.FontSize = (double)this.textSize;
+            EmailHeader.Height = SkypeHeader.Height = PhoneHeader.Height = this.textSize == TextSize.Small ? 20 : 30;
+            RequestHelp.FontSize = AvailableDoctors.FontSize = (double)this.textSize;
         }
 
         /// <summary>
