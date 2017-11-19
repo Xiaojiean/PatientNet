@@ -532,17 +532,16 @@
 
       /*
       Grant app with Admin Consent
-      *//*
-      document.getElementById('AdminConsent').onclick= function(){
+      */
+      function getAdminConsent(){
         location.assign('https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token'+
           '&client_id='+config.clientid+
           '&redirect_uri='+config.docReplyurl+
-          //'&response_mode=form_post'+ //Because it is static web page and cant' handle post method, I comment out it.
           '&nonce=samplestring'+// You can add code to defend Replay Attack with nonce property
           '&resource='+config.resource+
           '&prompt=admin_consent'
         );
-      };*/
+      };
       
       function initHandlers(client) {
               //Event handler: whenever app state changes, display its value
@@ -624,8 +623,8 @@
 	  document.getElementById('loader').style.display = "none";
 	  signedIn = true;
 	  if(!webId) {
-		webId = contactClient.personsAndGroupsManager.mePerson.id();
-		docId = guid();
+		docId = contactClient.personsAndGroupsManager.mePerson.id();
+		webId = guid();
 	  	//Send client hello to server.
 	  	var obj = {};
 	  	obj['type'] = 'hello';
