@@ -1,262 +1,376 @@
-<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT license. -->
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT license. -->
 <!-- Followed some examples from https://github.com/OfficeDev/skype-web-sdk-simple-sample-for-SfB-online -->
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>PatientNet Client</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="app.css"><!--layout file-->
-  <script src="./config.js"></script> <!-- setting file-->
-  <script src="https://swx.cdn.skype.com/shared/v/1.2.15/SkypeBootstrap.min.js"></script><!--Skype Web SDK-->
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script><!--JQuery-->
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>PatientNet Client</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="./config.js"></script> <!-- setting file-->
+    <script src="https://swx.cdn.skype.com/shared/v/1.2.15/SkypeBootstrap.min.js"></script><!--Skype Web SDK-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script><!--JQuery-->
+    <script src="https://static.filestackapi.com/v3/filestack.js"></script><!--Filepicker-->
+    <script src="./node_modules/intro.js/intro.js"></script><!--Intro.js-->
+    <link rel="stylesheet" href="./node_modules/intro.js/introjs.css"><!--Intro.js-->
+    <link rel="stylesheet" href="./node_modules/intro.js/themes/introjs-flattener.css"><!--Flattener theme-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"><!--Font Awesome icons-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script><!-- jQuery library -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><!-- Latest compiled JavaScript -->
+    <link rel="stylesheet" href="app.css"><!--layout file-->
 </head>
 <body>
-  <div id="container">
-    <div class="topnav">
-	  <h1>PatientNet Site</h1>
+    <div id="container">
+        <nav role="navigation" class="navbar navbar-default navbar-static-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" data-target="#navbarCollapse" data-toggle="collapse" class="navbar-toggle">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <h1>PatientNet Site  <i class="fa fa-ambulance"></i></h1>
+                </div>
+                <div id="navbarCollapse" class="collapse navbar-collapse height">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="#" onclick="startIntro()">Tour This Page</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div id="body">
+            <div id="SigninStatus"></div>
+            <div id="conversationWindow"></div>
+            <div id="conversationContainer"></div>
+            <div class="tableBar">
+                <button id="pickerButton" onclick="openPicker()" style="display:none">Upload Files</button>
+            </div>
+            <div id="filelistdiv">
+                <p id="filesHelp" style="display:none; text-align:center">Click to view the files you've uploaded. These will be deleted when the conversation ends.</p>
+                <ul id="fileslist">
+                    <li id="emptyFileLi">
+                        No files have been uploaded
+                    </li>
+                </ul>
+            </div>
+            <div id="loader"</div>
+        </div>
+        <div class="footer">
+            <div id="footName">PatientNet - EECS 498</div>
+        </div>
     </div>
-    <div id="body">
-  	<div id="SigninStatus"></div>
-  	<div id="conversationWindow"></div>
-  	<div id="conversationContainer"></div>
-	<div class="tableBar">
-		<button class="button" onClick="window.open('https://script.google.com/a/umich.edu/macros/s/AKfycbxmEmVEfqLbqXyN3eRTGKXi4AbglO9Y-C_DZLP7XgoSxqO7em_c/exec');">Upload Files</button>
-	</div>
-	<div id="loader"</div>
-    </div>
-    <div class = "footer">
-	  <p>PatientNet - EECS 498</p>
-    </div>
-  </div>
+    <script type="text/javascript">
+        var apiManager = null,
+            client = null,
+            org = null,
+            hostId = null,
+            meetingId = null,
+            docId = null,
+            webId = null,
+            contact = "Emergency Contact",
+	    wsc = null,
+            wsHost = 'wss://481patientnet.com:3001';
 
-  <script type="text/javascript">
-    var apiManager = null,
-    	client = null,
-    	org = null,
-	hostId = null,
-	meetingId = null,
-	contact = "Emergency Contact";
-
-    window.onload = function() {
-	console.log("URL BEFORE LOAD", window.location.href);  
-	// When the page loads, log in the user to Office365 if not already logged in.
-	if (!location.href.includes("access_token")) {
-		/*location.assign(
-		    config.loginurl+
-		    '&client_id='+config.clientid+
-          	    '&resource='+config.resource+
-          	    '&redirect_uri='+ config.clientReplyurl
-		    );*/
-	}
-	console.log("URL arguments:", window.location.search.substring(1));
-	contact = prompt("Please enter your name", "Emergency Contact");
-    };
-
-    (function () {
-      //Retrieves access token from URL fragment
-      console.log("URL in retrieve access token func", window.location.href);
-/*      if(location.hash) {
-        var hasharr = location.hash.substr(1).split("&");
-        hasharr.forEach(function(hashelem) {
-          var elemarr = hashelem.split("=");
-          if(elemarr[0] == "access_token") {
-            console.log('Access Token: '+ elemarr[1]);
-	    skypeInit(skypeLogin);
-	    //skypeInit(anonymousLogin);
-	  }
-        }, this);
-      }*/
-	var argStr = window.location.search.substring(1);
-	var args = argStr.split(/[=&]+/);
-	org = args[1];
-	hostId = args[3];
-	meetingId = args[5];
-      skypeInit(anonymousLogin);
-
-      /*
-      Grant app with Admin Consent
-      *//*
-      document.getElementById('AdminConsent').onclick= function(){
-        location.assign('https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token'+
-          '&client_id='+config.clientid+
-          '&redirect_uri='+config.clientReplyurl+
-          //'&response_mode=form_post'+ //Because it is static web page and cant' handle post method, I comment out it.
-          '&nonce=samplestring'+// You can add code to defend Replay Attack with nonce property
-          '&resource='+config.resource+
-          '&prompt=admin_consent'
-        );
-      };*/
-
-      /*
-      Initializing Skype Web SDK & Conversation Control.
-      On success, will login in the user to Sype as well by making a callback.
-      */
-      function skypeInit(_loginCallback) {
-	  console.log("RUNNING SKYPE INIT");
-          Skype.initialize({apiKey:config.apiKeyCC},function(api){
-              apiManager = api;
-              client = api.UIApplicationInstance;
-	      _loginCallback();
-
-              //Event handler: whenever app state changes, display its value
-              client.signInManager.state.changed(function (state) {
-		document.getElementById('SigninStatus').innerHTML = state;
-              });
-
-              //Event handler : it is handled when conversations added. ie. incoming call, outgoing call
-              client.conversationsManager.conversations.added(function(conversation){
-
-                //Event handler : Get notified when conversation control receives an incoming call
-                conversation.selfParticipant.audio.state.changed(function (newValue, reason, oldValue) {
-                  // 'Notified' indicates that there is an incoming call
-                  if(newValue === 'Notified') {
-                    var person = conversation.participants(0).person;
-                    var sip = person.id();
-
-                    if (confirm("Would you like to accept this incoming call from " + person.displayName() + "?")) {
-                        setTimeout(function() {
-                            var container = document.getElementById(sip);
-                            if(!container){
-                              container = document.createElement('div');
-                              container.id = sip;
-                              document.getElementById("conversationWindow").appendChild(container);
-
-                              //render conversation control
-                              var promise = apiManager.renderConversation(container,{
-                                //Start outgoing call
-                                modalities:['Chat'],
-                                participants : [sip]
-                              }).then(function(conversation){
-                                console.log('Conversation rendered successfully');
-                              });
-                            }
-                            // This accepts an incoming call with audio
-                            conversation.audioService.accept();
-                            // To accept an incoming call with video enabled call
-                            // conversation.videoService.accept()
-                        }, 0);
-                    } else {
-                        // Reject the incoming call
-                        conversation.audioService.reject();
-                    }
-                  }
-                });
-              });
-          }, function(err){
-            console.log(err);
-          });
-      }
-
-      function guid(){
-      	function s4() {
-		return Math.floor((1+ Math.random()) * 0x10000)
-			.toString(16)
-			.substring(1);
-	}
-	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
-      }
-
-      /*
-	 Anonymous sign-in.
-      */
-      function anonymousLogin(){
-	      var url = "https://meet.lync.com/" + org + "/" + hostId + "/" + meetingId;
-      $.ajax({
-	      url: "https://metiobank.cloudapp.net/GetAnonTokenJob",
-	      type: 'post',
-	      dataType: 'text',
-	      data: {
-		      ApplicationSessionId: guid(),
-		      AllowedOrigins: window.location.href,
-		      MeetingUrl: url
-	      },
-	      success: function(response) {
-		var res = JSON.parse(response);
-      		var params = {
-		      	name: contact,
-			cors: true,
-			root: { user: res.DiscoverUri },
-			token: "Bearer " + res.Token
-	        };
-        	client.signInManager.signIn(params).then(function(){
-	  		var conversation = client.conversationsManager.conversations(0);
-          		document.getElementById('SigninStatus').innerHTML = 'Hello ' + client.personsAndGroupsManager.mePerson.displayName() + '. You have been connected with a doctor. Feel free to call the doctor, but note that only audio calls are supported.';
-	  		loadChat(conversation);
-			},function(error){
-	  			console.log("Error signing in: " + error);
-			});
-	      },
-	      error: function(err) {
-	      	console.log("Error: " + JSON.stringify(err.body));
-	      }
-      });
-      }
-
-      /*
-      Sign-in Skype
-      *//*
-      function skypeLogin(){
-        var params =
-        {
-         "client_id": config.clientid,
-         "origins": ["https://webdir.online.lync.com/autodiscover/autodiscoverservice.svc/root"],
-         "cors": true,
-         "version": config.appName+'/1.0.0',
-         "redirect_uri": "/client.html"
+	//The message to show when the contact.
+        var MESSAGE = {
+            INITIAL: '. You have been connected with a doctor. Feel free to call the doctor, but note that only audio calls are supported.'
         };
 
-        client.signInManager.signIn(params).then(function(){
-          document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + client.personsAndGroupsManager.mePerson.displayName();
-      	  var uri = "sip:tsaoa@patientnet2.onmicrosoft.com;gruu;opaque=app:conf:focus:id:2MJ3F24I";
-	  var conversation = client.conversationsManager.getConversationByUri(uri);
-	  loadChat(conversation);
-        },function(error){
-          console.log(error);
-        });
-      };
-*/
-      /*
-      Render conversation control on outgoing call
-      */
-      function loadChat(conversation){
-	//TODO: Show contact list instead of auto populating this contact.
-	var uris = ['sip:tsaoa@patientNet2.onmicrosoft.com'];
-        var container = document.createElement('div');
-        document.getElementById("conversationWindow").appendChild(container);
+        window.onload = function () {
+            console.log("URL BEFORE LOAD", window.location.href);
+            console.log("URL arguments:", window.location.search.substring(1));
+            contact = prompt("Please enter your name", "Emergency Contact");
+        };
 
-	//render Conversation Control in a web page.
-        var promise = apiManager.renderConversation(container,{
-          //Start outgoing call with chat window
-          modalities:['Chat'],
-          conversation: conversation
-        })
-	promise.then(function(conversation) {
-		//Rendered successfully
-		document.getElementById("loader").style.display = "none";
-		conversation.chatService.start();
-	}, function(error) {
-		console.log("Error: " + error);
-	});
-    /*
-	var newDiv = document.createElement('div');
-	var control = document.getElementById('conversationContainer');
-	control.appendChild(newDiv);
+        if (wsc == null) {
+            wsc = new WebSocket(wsHost);
+            wsc.onclose = function () {
+                console.log("Websocket connection closed.");
+                wsc = null;
+            }
+        }
 
-        apiManager.renderConversation(newDiv,{
-          //Start outgoing call with chat window
-          modalities:['Chat'],
-          participants: uris
-	}).then(function(conversation) {
-		//Rendered successfully
-		conversation.chatService.start();
-	}, function(error) {
-		console.log("Error: " + error);
-	});
+        /*
+       Initialize Filestack object and open Filestack picker to choose files to upload.
+       Allow up to 5 files be loaded at a time from the local computer, Google Drive, DropBox, and/or OneDrive.
+        */
+        var fsClient = filestack.init(config.filePickerApiKey, { policy: config.policy, signature: config.signature });
+        function openPicker() {
+            fsClient.pick({
+                fromSources: ["local_file_system", "googledrive", "dropbox", "onedrive"],
+                maxFiles: 5
+            }).then(function (response) {
+                console.log(response);
+                //Send the handle and filename of each uploaded file to the server, which will pass this info to the doctor.
+                for (var i in response.filesUploaded) {
+                    var f = response.filesUploaded[i];
+                    console.log("Uploaded filename: " + f.filename + " handle: " + f.handle);
+                    var obj = {};
+                    obj['type'] = 'upload';
+                    obj['docId'] = docId;
+                    obj['webId'] = webId;
+                    obj['filename'] = f.filename;
+                    obj['handle'] = f.handle;
+                    wsc.send(JSON.stringify(obj));
+                    addToFileList(f.filename, f.handle);
+                }
+            });
+        }
+
+	/*
+	   setListItemStyling dynamically sets the CSS styling for a list item.
 	*/
+        function setListItemStyling(li) {
+            li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; cursor:pointer; display: block";
+            li.onmouseenter = function () {
+                this.style.backgroundColor = '#eee';
+            }
+            li.onmouseleave = function () {
+                this.style.backgroundColor = '#f6f6f6';
+            }
+        }
 
-      };
-    }());
-  </script>
+        /*
+       Add an uploaded file to the files list.
+        */
+        function addToFileList(fileName, handle) {
+            var ul = document.getElementById('fileslist');
+            if (ul.getElementsByTagName('li')[0].id == 'emptyFileLi') {
+                //Remove the default empty list item if it exists.
+                ul.removeChild(ul.getElementsByTagName('li')[0]);
+            }
+            var li = document.createElement('li');
+            li.setAttribute('id', handle);
+            li.innerHTML = fileName;
+            //Add styling to list item.
+            setListItemStyling(li);
+            //On click, open File in new window.
+            if (fileName != 'emptyFileLi') {
+                li.onclick = (function () {
+                    window.open("https://www.filestackapi.com/api/file/" + handle + "?signature=" + config.signature + "&policy=" + config.policy, "_blank");
+                });
+            }
+
+            //Add delete button to list item.
+            var but = document.createElement('button');
+            but.innerHTML = '<i class="fa fa-trash"></i>';
+            but.style = "float:right";
+            but.onclick = (function () {
+                event.stopPropagation(); //Need this to prevent list item onclick listener from running.
+                //Notify the doctor that this item was removed.
+                removeItem(handle, 'fileslist');
+                var obj = {};
+                obj['type'] = 'delete';
+                obj['docId'] = docId;
+                obj['webId'] = webId;
+                obj['filename'] = fileName;
+                obj['handle'] = handle;
+                wsc.send(JSON.stringify(obj));
+            });
+            li.appendChild(but);
+            ul.appendChild(li);
+        }
+
+        /*
+       Remove an item from list.
+        */
+        function removeItem(emtName, listname) {
+            //Find and remove the list item with the emt name.
+            var ul = document.getElementById(listname);
+            var items = ul.getElementsByTagName('li');
+            for (var i = 0; i < items.length; i++) {
+                var li = items[i];
+                console.log("id: " + li.id + " emt: " + emtName);
+                if (li.id == emtName) {
+                    ul.removeChild(li);
+                }
+            }
+            items = ul.getElementsByTagName('li');
+            //If we have removed all items, add the default emtpy list item to the list.
+            if (items.length == 0) {
+                var li = document.createElement('li');
+                if (listname == 'emtlist') {
+                    li.setAttribute('id', 'emptyLi');
+                    li.innerHTML = 'No EMTs have requested help';
+                } else if (listname == 'fileslist') {
+                    li.setAttribute('id', 'emptyFileLi');
+                    li.innerHTML = 'No files have been uploaded';
+                }
+                //Add styling to list item.
+                li.style = "border:1px solid #ddd; background-color:#f6f6f6; padding:12px; display: block";
+                ul.append(li);
+            }
+        }
+
+        //Initialize and start the introjs object for the page tour.
+        function startIntro() {
+            var intro = introJs();
+            var options = [
+                {
+                    element: document.getElementById('conversationWindow'),
+                    intro: "Use this to send instant messages or have an audio call with the doctor."
+                },
+                {
+                    element: document.getElementById('pickerButton'),
+                    intro: "Use this button to upload files that only the doctor will be able to see. They will be deleted when the conversation ends."
+                },
+                {
+                    element: document.getElementById('fileslist'),
+                    intro: "Files that you upload will appear here. Click them to view and/or download."
+                },
+            ];
+            intro.setOptions({
+                steps: options
+            });
+
+            intro.start();
+        }
+
+        (function () {
+            //Retrieves meeting arguments URL fragment
+            console.log("URL in retrieve access token func", window.location.href);
+            var argStr = window.location.search.substring(1);
+            var args = argStr.split(/[=&]+/);
+            org = args[1];
+            hostId = args[3];
+            meetingId = args[5];
+            docId = args[7];
+            webId = args[9];
+            skypeInit(anonymousLogin);
+
+            /*
+            Initializing Skype Web SDK & Conversation Control.
+            On success, will login in the user to Skype as well by making a callback.
+            */
+            function skypeInit(_loginCallback) {
+                console.log("RUNNING SKYPE INIT");
+                Skype.initialize({ apiKey: config.apiKeyCC }, function (api) {
+                    apiManager = api;
+                    client = api.UIApplicationInstance;
+                    _loginCallback();
+
+                    //Event handler: whenever app state changes, display its value
+                    client.signInManager.state.changed(function (state) {
+                        document.getElementById('SigninStatus').innerHTML = state;
+                    });
+
+                    //Event handler : it is handled when conversations added. ie. incoming call, outgoing call
+                    client.conversationsManager.conversations.added(function (conversation) {
+
+                        //Event handler : Get notified when conversation control receives an incoming call
+                        conversation.selfParticipant.audio.state.changed(function (newValue, reason, oldValue) {
+                            // 'Notified' indicates that there is an incoming call
+                            if (newValue === 'Notified') {
+                                var person = conversation.participants(0).person;
+                                var sip = person.id();
+
+                                if (confirm("Would you like to accept this incoming call from " + person.displayName() + "?")) {
+                                    setTimeout(function () {
+                                        var container = document.getElementById(sip);
+                                        if (!container) {
+                                            container = document.createElement('div');
+                                            container.id = sip;
+                                            document.getElementById("conversationWindow").appendChild(container);
+
+                                            //render conversation control
+                                            var promise = apiManager.renderConversation(container, {
+                                                //Start outgoing call
+                                                modalities: ['Chat'],
+                                                participants: [sip]
+                                            }).then(function (conversation) {
+                                                console.log('Conversation rendered successfully');
+                                            });
+                                        }
+                                        // This accepts an incoming call with audio
+                                        conversation.audioService.accept();
+                                        // To accept an incoming call with video enabled call
+                                        // conversation.videoService.accept()
+                                    }, 0);
+                                } else {
+                                    // Reject the incoming call
+                                    conversation.audioService.reject();
+                                }
+                            }
+                        });
+                    });
+                }, function (err) {
+                    console.log(err);
+                });
+            }
+
+            /*
+           Create unique ID for this browser session.
+            */
+            function guid() {
+                function s4() {
+                    return Math.floor((1 + Math.random()) * 0x10000)
+                        .toString(16)
+                        .substring(1);
+                }
+                return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+            }
+
+            /*
+           Anonymous sign-in borrowed from https://msdn.microsoft.com/en-us/skype/trusted-application-api/docs/implementinganonymousclientwithskypewebsdk.
+            */
+            function anonymousLogin() {
+                var url = "https://meet.lync.com/" + org + "/" + hostId + "/" + meetingId;
+                $.ajax({
+                    url: "https://metiobank.cloudapp.net/GetAnonTokenJob",
+                    type: 'post',
+                    dataType: 'text',
+                    data: {
+                        ApplicationSessionId: guid(),
+                        AllowedOrigins: window.location.href,
+                        MeetingUrl: url
+                    },
+                    success: function (response) {
+                        var res = JSON.parse(response);
+                        var params = {
+                            name: contact,
+                            cors: true,
+                            root: { user: res.DiscoverUri },
+                            token: "Bearer " + res.Token
+                        };
+                        client.signInManager.signIn(params).then(function () {
+                            var conversation = client.conversationsManager.conversations(0);
+                            document.getElementById('SigninStatus').innerHTML = 'Hello ' + client.personsAndGroupsManager.mePerson.displayName() + MESSAGE.INITIAL;
+                            loadChat(conversation);
+                        }, function (error) {
+                            console.log("Error signing in: " + error);
+                        });
+                    },
+                    error: function (err) {
+                        console.log("Error: " + JSON.stringify(err.body));
+                    }
+                });
+            }
+
+            /*
+            Render conversation control on outgoing call
+            */
+            function loadChat(conversation) {
+                var container = document.createElement('div');
+                document.getElementById("conversationWindow").appendChild(container);
+
+                //Render Conversation Control in a web page.
+                var promise = apiManager.renderConversation(container, {
+                    //Start outgoing call with chat window.
+                    modalities: ['Chat'],
+                    conversation: conversation
+                })
+                promise.then(function (conversation) {
+                    //Rendered successfully. Update UI.
+                    document.getElementById("loader").style.display = "none";
+                    conversation.chatService.start();
+                    document.getElementById('pickerButton').style.display = "block";
+                    document.getElementById('fileslist').style.display = "block";
+                    document.getElementById('filesHelp').style.display = "block";
+                }, function (error) {
+                    console.log("Error: " + error);
+                });
+            };
+        }());
+    </script>
 </body>

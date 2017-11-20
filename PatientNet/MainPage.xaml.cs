@@ -5,234 +5,252 @@
      *      1) Add summaries
      *      2) Organize member functions
      *      3) Improve UI
+     *      4) Add sound button enable / disable for HoloLens clicks
+     *      5) Improve user notification textbox (something more like toast)
+     *      6) Add headers to fields to better distinguish contact vs emt info
      * 
      */
-
 
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Windows.ApplicationModel;
-    using Windows.Graphics.Display;
-    using Windows.Media.Capture;
     using Windows.System.Display;
     using Windows.UI;
-    using Windows.UI.Core;
     using Windows.UI.Xaml;
     using Windows.UI.Xaml.Media;
     using Windows.UI.Xaml.Controls;
     using Windows.UI.Xaml.Input;
+    using Windows.Storage;
     using System.Net.Http;
     using System.Net.Http.Headers;
-    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using System.Text;
     using System.Text.RegularExpressions;
+    using System.IO;
+
+    public enum MessageType
+    {
+        Number, Skype, Email
+    };
 
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        MediaCapture _mediaCapture;
         DisplayRequest _displayRequest = new DisplayRequest();
-        bool _isPreviewing;
-        MessageType input;
 
         private const int FormattedPhoneLength = 13;
-        private const int SendSleepTimeInMilliseconds = 5000;
+        private const int SleepTimeInMilliseconds = 1000;
         private const string SendSmsEndpoint = "api/v1/sendsms";
         private const string SendEmailEndpoint = "api/v1/sendemail";
         private const string RequestDoctorsEndpoint = "api/v1/requestdoctor";
+        private const string AvailableDoctorsEndpoint = "api/v1/getavailabledoctors";
 
-        private Logger logger = new Logger();
+        private enum TextSize
+        {
+            Small = 15, Large = 20
+        };
+
+        private TextSize textSize = TextSize.Small;
+
+        private Logger logger;
+        private const string LogFolder = ".logs";
         private HashSet<string> numbersSentTo = new HashSet<string>();
+        private HashSet<string> emailsSentTo = new HashSet<string>();
         private HashSet<string> skypesSentTo = new HashSet<string>();
+        private HashSet<MessageType> entersPressed = new HashSet<MessageType>();
+
+        HttpClient httpClient;
+        private const string ContentType = "application/json";
+
+        private StorageFolder storageFolder = ApplicationData.Current.LocalFolder;
+        private const string skypeNameFile = ".skype.txt";
+
+        private DispatcherTimer availableDoctorTimer = new DispatcherTimer();
+        TimeSpan doctorTimerInterval = TimeSpan.FromSeconds(30);  // Query every 30 seconds
+
+        private int oldPhoneLength = 0;  // Used to determine if change was insert or delete
+        private bool skypeFocused = false;
+        private bool contactFocused = false;
+        private bool helpOn = false;
 
         private delegate void SendRequestEventHandler(object sender, RequestEventArgs e);
         private event SendRequestEventHandler SentRequest;  // Invoke on phone click
+        private delegate void EnterEventHandler(object sender, EnterEventArgs e);
+        private event EnterEventHandler EnterPressed;  // Invoke on enter
 
-        enum MessageType
-        {
-            Number, Skype, Email
-        };
-
+        /// <summary>
+        /// Initializes page state upon opening the application
+        /// </summary>
         public MainPage()
         {
             this.InitializeComponent();
+
+            string time = DateTime.Now.ToString("yyyyMMddHHmmss");
+            string logFolder = Path.Combine(storageFolder.Path, MainPage.LogFolder);
+            var filename = Path.Combine(MainPage.LogFolder, time + ".log");
+            if (!Directory.Exists(logFolder)) {
+                Directory.CreateDirectory(logFolder);
+            }
+
+            this.logger = new Logger(filename);
+
             this.SentRequest += this.OnRequestSent;
-            Application.Current.Suspending += Application_Suspending;
+            this.EnterPressed += this.OnEnterPressed;
+            Application.Current.Resources["ToggleButtonBackgroundChecked"] = new SolidColorBrush(Colors.Transparent);
+            Application.Current.Resources["ToggleButtonBackgroundCheckedPointerOver"] = new SolidColorBrush(Colors.Transparent);
+            Application.Current.Resources["ToggleButtonBackgroundCheckedPressed"] = new SolidColorBrush(Colors.Transparent);
+
+            LoadSavedData();  // Load the previous skype name
+
+            InitHttpClient();  // Initialize http client to make api calls
+
+            availableDoctorTimer.Interval = this.doctorTimerInterval;
+            availableDoctorTimer.Tick += QueryAvailableDoctors;
+            availableDoctorTimer.Start();
+
+            QueryAvailableDoctors(null, null);  // Initial query for available doctors
         }
 
         /// <summary>
-        /// 
+        /// Initializes the base url to connect to the server
         /// </summary>
-        private async void Application_Suspending(object sender, SuspendingEventArgs e)
+        private void InitHttpClient()
         {
-            // Handle global application events only if this page is active
-            if (Frame.CurrentSourcePageType == typeof(MainPage))
+            this.httpClient = new HttpClient
             {
-                var deferral = e.SuspendingOperation.GetDeferral();
-                await CleanupCameraAsync();
-                deferral.Complete();
+                BaseAddress = new Uri("https://481patientnet.com:3001")
+            };
+
+            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MainPage.ContentType));
+            this.httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
+        }
+
+        /// <summary>
+        /// Returns the number of doctors available to service an EMT's request
+        /// </summary>
+        private async void QueryAvailableDoctors(object sender, object e)
+        {
+            this.logger.Log("Querying available doctors");
+            
+            // Send empty content
+            HttpContent content = new StringContent(string.Empty, Encoding.UTF8, MainPage.ContentType);
+            HttpResponseMessage response = null;
+
+            try
+            {
+                response = await this.httpClient.PostAsync(this.httpClient.BaseAddress + AvailableDoctorsEndpoint, content);
+            }
+            catch (HttpRequestException ex) {
+                this.logger.Log("QueryAvailableDoctors: While querying for available doctors, got exception: " + ex.Message);
+            }
+
+            // API Call
+            if (response != null && response.IsSuccessStatusCode)
+            {
+                this.logger.Log(response.Content.ReadAsStringAsync().Result);
+                var responseBody = response.Content.ReadAsStringAsync().Result;
+                JObject s = JObject.Parse(responseBody);
+                int numAvailableDoctors = (int)s["availabledoctors"];
+                AvailableDoctors.Text = $"Available Doctors: {numAvailableDoctors}";
+            }
+            else
+            {
+                this.logger.Log("QueryAvailableDoctors: When querying for available doctors, did not get a success message.");
             }
         }
 
         /// <summary>
-        /// 
+        /// Auto-populates the skype name box with the last name entered
         /// </summary>
-        private async Task StartPreviewAsync()
+        private async void LoadSavedData()
         {
             try
             {
-
-                _mediaCapture = new MediaCapture();
-                await _mediaCapture.InitializeAsync();
-
-                _displayRequest.RequestActive();
-                DisplayInformation.AutoRotationPreferences = DisplayOrientations.Landscape;
+                StorageFile storageFile = await this.storageFolder.GetFileAsync(MainPage.skypeNameFile);
+                SkypeName.Text = await FileIO.ReadTextAsync(storageFile);
+                this.logger.Log($"LoadSavedData: Found {skypeNameFile} in path {ApplicationData.Current.LocalFolder.Path}");
             }
-            catch (UnauthorizedAccessException)
+            catch (FileNotFoundException)
             {
-                // This will be thrown if the user denied access to the camera in privacy settings
-                this.logger.Log("The app was denied access to the camera");
-                return;
-            }
-
-            try
-            {
-                PreviewControl.Source = _mediaCapture;
-                await _mediaCapture.StartPreviewAsync();
-                _isPreviewing = true;
-            }
-            catch (System.IO.FileLoadException)
-            {
-                _mediaCapture.CaptureDeviceExclusiveControlStatusChanged += _mediaCapture_CaptureDeviceExclusiveControlStatusChanged;
-            }
-
-        }
-
-        private async void _mediaCapture_CaptureDeviceExclusiveControlStatusChanged(MediaCapture sender, MediaCaptureDeviceExclusiveControlStatusChangedEventArgs args)
-        {
-            if (args.Status == MediaCaptureDeviceExclusiveControlStatus.SharedReadOnlyAvailable)
-            {
-                this.logger.Log("The camera preview can't be displayed because another app has exclusive access");
-            }
-            else if (args.Status == MediaCaptureDeviceExclusiveControlStatus.ExclusiveControlAvailable && !_isPreviewing)
-            {
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
-                {
-                    await StartPreviewAsync();
-                });
-            }
-        }
-
-        private async Task CleanupCameraAsync()
-        {
-            if (_mediaCapture != null)
-            {
-                if (_isPreviewing)
-                {
-                    await _mediaCapture.StopPreviewAsync();
-                }
-
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                {
-                    PreviewControl.Source = null;
-                    if (_displayRequest != null)
-                    {
-                        _displayRequest.RequestRelease();
-                    }
-
-                    _mediaCapture.Dispose();
-                    _mediaCapture = null;
-                });
-            }
-        }
-
-        private async void StartButton_Click(object sender, RoutedEventArgs e)
-        {
-            await StartPreviewAsync();
-        }
-
-        private async void StopButton_Click(object sender, RoutedEventArgs e)
-        {
-            await CleanupCameraAsync();
-        }
-
-        private void PhoneDownHandler(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == Windows.System.VirtualKey.Enter)
-            {
-                PhoneClick(sender, e);
-            }
-        }
-
-        private void SkypeNameDownHandler(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == Windows.System.VirtualKey.Enter)
-            {
-                CallDoctorClick(sender, e);
+                this.logger.Log($"LoadSavedData: Did not find {skypeNameFile} in path {ApplicationData.Current.LocalFolder.Path}");
             }
         }
 
         /// <summary>
-        /// Used to send phone numbers and skype names
+        /// Used to send skype names, phone numbers, and email addresses
         /// </summary>
-        private async void SendHTTP(string message, string endpoint, MessageType type)
+        private async void SendHTTP(string endpoint, Dictionary<MessageType, string> sendTypes)
         {
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-
             if (string.IsNullOrWhiteSpace(endpoint))
             {
                 throw new ArgumentNullException(nameof(endpoint));
             }
 
-            HttpClient httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri("https://481patientnet.com:3001");
-            string content_type = "application/json";
-            string key = null;              // Key to send to API
-            string title = null;            // Title of popup
-            string success_message = null;  // Message to print on success
-
-            switch (type)
-            {
-                case MessageType.Number:
-                    key = "number";
-                    title = "Notify Emergency Contact";
-                    success_message = $"Successfully sent SMS to {PhoneNumberFormatter(message)}.";
-                    break;
-                case MessageType.Email:
-                    key = "email";
-                    title = "Notify Emergency Contact";
-                    success_message = $"Successfully sent email to {message}.";
-                    break;
-                case MessageType.Skype:
-                    key = "skypeid";
-                    title = "Notify All Doctors";
-                    success_message = "Successfully notified doctors! A doctor will initiate a Skype call soon.";
-                    break;
-                default:
-                    throw new ArgumentException("Invalid message type.");
-            }
-
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(content_type));
-            httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
-
+            string title = "Request Doctors";
+            string success_message_both = "Successfully Notified Emergency Contact and Doctors";
+            string success_message_contact = "Successfully Notified Emergency Contact";
+            string success_message_doctor = "Successfully Notified Doctors";
+            string success_message;
+            
             try
             {
-                string info = $"{{ \"{key}\": \"{message}\" }}";
-                var serialized = JsonConvert.SerializeObject(info);
-                HttpContent content = new StringContent(info, Encoding.UTF8, content_type);
+                string info;
+                string emailString = "email";
+                string skypeString = "skypeid";
+                string numberString = "number";
+
+                bool contains_email = sendTypes.ContainsKey(MessageType.Email);
+                bool contains_skype = sendTypes.ContainsKey(MessageType.Skype);
+                bool contains_number = sendTypes.ContainsKey(MessageType.Number);
+
+                if (sendTypes.Count == 1 && contains_skype)
+                {
+                    info = $"{{ \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                    success_message = success_message_doctor;
+                }
+                else if (sendTypes.Count == 2)
+                {
+                    if (contains_email && contains_skype)
+                    {
+                        info = $"{{ \"{emailString}\": \"{sendTypes[MessageType.Email]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                        success_message = success_message_both;
+                    }
+                    else if (contains_number && contains_skype)
+                    {
+                        info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                        success_message = success_message_both;
+                    }
+                    else // information is only for emergency contact
+                    {
+                        info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{emailString}\": \"{sendTypes[MessageType.Email]}\" }}";
+                        success_message = success_message_contact;
+                    }
+                }
+                else if (sendTypes.Count == 3)
+                {
+                    info = $"{{ \"{numberString}\": \"{sendTypes[MessageType.Number]}\", \"{emailString}\": \"{sendTypes[MessageType.Email]}\", \"{skypeString}\": \"{sendTypes[MessageType.Skype]}\" }}";
+                    success_message = success_message_both;
+                }
+                else // sanity check
+                {
+                    return;
+                }
+
+                HttpContent content = new StringContent(info, Encoding.UTF8, MainPage.ContentType);
                 this.logger.Log("Sending " + info + " to " + endpoint);
 
-                HttpResponseMessage response = await httpClient.PostAsync(httpClient.BaseAddress + endpoint, content);
+                HttpResponseMessage response = await this.httpClient.PostAsync(this.httpClient.BaseAddress + endpoint, content);
 
                 if (response.IsSuccessStatusCode)
                 {
                     NotifyUser($"{title}: {success_message}");
+
+                    // Save Skype name for future use
+                    StorageFile storageFile = await this.storageFolder.CreateFileAsync(MainPage.skypeNameFile, CreationCollisionOption.ReplaceExisting);
+                    await FileIO.WriteTextAsync(storageFile, sendTypes[MessageType.Skype]);
+                    this.logger.Log($"SendHTTP: Wrote to {skypeNameFile} in path {ApplicationData.Current.LocalFolder.Path}");
                 }
                 else
                 {
@@ -241,33 +259,63 @@
             }
             catch (Exception ex)
             {
-                this.logger.Log($"Exception: {ex.Message}");
+                this.logger.Log($"SendHTTP: Got exception: {ex.Message}");
             }
         }
 
+        /// <summary>
+        /// Prevents the HoloLens' click-twice anomaly
+        /// </summary>
         private async void OnRequestSent(object sender, RequestEventArgs e)
         {
             e.Set.Add(e.Content);
 
-            await Task.Delay(MainPage.SendSleepTimeInMilliseconds);  // Disallow sending again for 5 seconds
+            // Disallow sending again for 1 second (debouncer)
+            await Task.Delay(MainPage.SleepTimeInMilliseconds);
 
             e.Set.Remove(e.Content);
-            this.logger.Log($"Removed {e.Content} from {nameof(e.Set)}");
+            this.logger.Log($"OnRequestSent: Removed {e.Content} from {nameof(e.Set)}");
         }
 
-        private void PhoneClick(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Prevents the HoloLens' click-twice anomaly
+        /// </summary>
+        private async void OnEnterPressed(object sender, EnterEventArgs e)
         {
-            if (input == MessageType.Number)
-            {
-                string phoneNumber = Phone.Text;
+            this.entersPressed.Add(e.Type);
 
-                if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length != MainPage.FormattedPhoneLength)
+            // Disallow pressing enter again for 1 second (debouncer)
+            await Task.Delay(MainPage.SleepTimeInMilliseconds);
+
+            this.entersPressed.Remove(e.Type);
+            this.logger.Log($"OnEnterPressed: Removed {e.Type} from entersPressed set");
+        }
+
+        /// <summary>
+        /// Handles when the EMT clicks the submit button
+        /// </summary>
+        private void RequestDoctors_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(SkypeName.Text))
+            {
+                NotifyUser("Please enter a skype name.");
+                return;
+            }
+
+            string phoneNumber = Phone.Text;
+            string email = Email.Text;
+            string skypeName = SkypeName.Text;
+            Dictionary<MessageType, string> sendTypes = new Dictionary<MessageType, string>();
+
+            // Handling Phone Number
+            if (!string.IsNullOrWhiteSpace(phoneNumber))
+            {
+                if (phoneNumber.Length != MainPage.FormattedPhoneLength)
                 {
                     NotifyUser($"Invalid Number. Please try again.");
                     return;
                 }
-
-                if (this.numbersSentTo.Contains(phoneNumber))
+                else if (this.numbersSentTo.Contains(phoneNumber))
                 {
                     this.logger.Log($"Recently sent to {phoneNumber}. Skipping.");
                     return;  // Don't do anything
@@ -276,58 +324,25 @@
                 // Add phone number to set of numbers
                 this.logger.Log($"Adding {phoneNumber} to {this.numbersSentTo}");
                 SentRequest.Invoke(this, new RequestEventArgs(this.numbersSentTo, phoneNumber));
-
-                try
-                {
-                    string parsedPhoneNumber = string.Format("{0}{1}{2}", phoneNumber.Substring(1, 3),
-                        phoneNumber.Substring(5, 3), phoneNumber.Substring(9, 4));
-                    string endpoint = SendSmsEndpoint;
-                    SendHTTP(parsedPhoneNumber, endpoint, MessageType.Number);
-                }
-                catch (Exception ex)
-                {
-                    this.logger.Log($"Error: when notifying contact, got exception: {ex.Message}");
-                    NotifyUser($"Error notifying contact: {ex.Message}");
-                }
+                sendTypes.Add(MessageType.Number, phoneNumber);
             }
-            else if (input == MessageType.Email)
+
+            // Handling Email
+            if (!string.IsNullOrWhiteSpace(email))
             {
-                string email = Phone.Text;
-
-                if (string.IsNullOrWhiteSpace(email))
+                if (this.emailsSentTo.Contains(email))
                 {
-                    NotifyUser($"Invalid Email. Please try again.");
-                    return;
+                    this.logger.Log($"Recently sent to {email}. Skipping.");
+                    return;  // Don't do anything
                 }
 
-                try
-                {
-                    string endpoint = SendEmailEndpoint;
-                    SendHTTP(email, endpoint, MessageType.Email);
-                }
-                catch (Exception ex)
-                {
-                    this.logger.Log($"Error: when notifying contact, got exception: {ex.Message}");
-                    NotifyUser($"Error notifying contact: {ex.Message}");
-                }
-            }
-            else
-            {
-                return;
-            }
-        }
-
-        private void CallDoctorClick(object sender, RoutedEventArgs e)
-        {
-            string skypeName = SkypeName.Text;
-
-            if (string.IsNullOrWhiteSpace(skypeName))
-            {
-                this.logger.Log($"Got null or empty skype name. Skipping.");
-                NotifyUser("Please enter a skype name.");
-                return;
+                // Add email to set of emails
+                this.logger.Log($"Adding {email} to {this.emailsSentTo}");
+                SentRequest.Invoke(this, new RequestEventArgs(this.emailsSentTo, email));
+                sendTypes.Add(MessageType.Email, email);
             }
 
+            // Handle sending skype name twice
             if (this.skypesSentTo.Contains(skypeName))
             {
                 this.logger.Log($"Recently sent to {skypeName}. Skipping.");
@@ -337,77 +352,88 @@
             // Add skype name to set of skypes
             this.logger.Log($"Adding {skypeName} to {nameof(this.skypesSentTo)}");
             SentRequest.Invoke(this, new RequestEventArgs(this.skypesSentTo, skypeName));
+            sendTypes.Add(MessageType.Skype, skypeName);
 
+            // Sending HTTP Request containing all non-empty parameters
             try
             {
-                /*const string skypeNamePrefix = "sip:";
-                const string skypeNameSuffix = "@skypeids.net";
-
-                (if (!skypeName.StartsWith(skypeNamePrefix))
-                {
-                    skypeName = skypeNamePrefix + skypeName;
-                }
-                if (!skypeName.EndsWith(skypeNameSuffix))
-                {
-                    skypeName += skypeNameSuffix;
-                }*/
-
                 string endpoint = RequestDoctorsEndpoint;
-                SendHTTP(skypeName, endpoint, MessageType.Skype);
+                SendHTTP(endpoint, sendTypes); // TODO: NEED TO CHANGE SendHTTP INTERFACE
             }
             catch (Exception ex)
             {
-                this.logger.Log($"Error: When requesting doctors, got exception: {ex.Message}");
-                NotifyUser($"Error requesting doctors: {ex.Message}");
-                return;
+                this.logger.Log($"Error: when notifying contact, got exception: {ex.Message}");
+                NotifyUser($"Error notifying contact: {ex.Message}");
             }
         }
 
-        private void PhoneSelected(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Prevents the HoloLens' click-twice anomaly
+        /// </summary>
+        private void Skype_KeyDownHandler(object sender, KeyRoutedEventArgs e)
         {
-            input = MessageType.Number;
-            Phone.MaxLength = 13;
-            Phone.PlaceholderText = "(XXX)XXX-XXXX";
-            Phone.Text = string.Empty;
-            Phone.IsEnabled = true;
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                // Protect against enter registering twice
+                if (this.entersPressed.Contains(MessageType.Skype))
+                {
+                    return;
+                }
 
-            SelectPhoneBackground.Background = new SolidColorBrush(Colors.WhiteSmoke);
-            SelectEmailBackground.Background = new SolidColorBrush(Colors.Transparent);
-
-            InputScope scope = new InputScope();
-            InputScopeName scopeName = new InputScopeName();
-            scopeName.NameValue = InputScopeNameValue.TelephoneNumber;
-            scope.Names.Add(scopeName);
-            Phone.InputScope = scope;
-        }
-    
-        private void EmailSelected(object sender, RoutedEventArgs e)
-        {
-            input = MessageType.Email;
-            Phone.MaxLength = 100;
-            Phone.PlaceholderText = "johndoe@gmail.com";
-            Phone.Text = string.Empty;
-            Phone.IsEnabled = true;
-
-            SelectPhoneBackground.Background = new SolidColorBrush(Colors.Transparent);
-            SelectEmailBackground.Background = new SolidColorBrush(Colors.WhiteSmoke);
-
-            InputScope scope = new InputScope();
-            InputScopeName scopeName = new InputScopeName();
-            scopeName.NameValue = InputScopeNameValue.EmailNameOrAddress;
-            scope.Names.Add(scopeName);
-            Phone.InputScope = scope;
+                Phone.Focus(FocusState.Pointer);
+                this.logger.Log("Focusing on Phone!");
+                this.EnterPressed.Invoke(this, new EnterEventArgs(MessageType.Number));
+            }
         }
 
-        private string PhoneNumberFormatter(string value)
+        /// <summary>
+        /// Prevents the HoloLens' click-twice anomaly
+        /// </summary>
+        private void Phone_KeyDownHandler(object sender, KeyRoutedEventArgs e)
         {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                // Protect against enter registering twice
+                if (this.entersPressed.Contains(MessageType.Number))
+                {
+                    return;
+                }
+
+                Email.Focus(FocusState.Pointer);
+                this.logger.Log("Focusing on Email!");
+                this.EnterPressed.Invoke(this, new EnterEventArgs(MessageType.Email));
+            }
+        }
+
+        /// <summary>
+        /// Prevents the HoloLens' click-twice anomaly
+        /// </summary>
+        private void Email_KeyDownHandler(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                // Protect against enter registering twice
+                if (this.entersPressed.Contains(MessageType.Email))
+                {
+                    return;
+                }
+
+                RequestDoctors_Click(sender, e);
+            }
+        }
+
+        private void PhoneNumberFormatter(TextBox textBox, bool insert)
+        {
+            string value = textBox.Text;
+            var oldSelectionStart = textBox.SelectionStart;
+
             value = new Regex(@"\D").Replace(value, string.Empty);
 
             if (string.IsNullOrEmpty(value))
             {
-                return value;
+                // Do nothing
             }
-            if (value.Length < 4)
+            else if (value.Length < 4)
             {
                 value = string.Format("({0}", value.Substring(0, value.Length));
             }
@@ -425,50 +451,171 @@
                 value = string.Format("({0}){1}-{2}", value.Substring(0, 3), value.Substring(3, 3), value.Substring(6));
             }
 
-            return value;
+            textBox.Text = value;
+            if (insert)
+            {
+                // Move cursor over to account for phone format character
+                if (oldSelectionStart == 1 || oldSelectionStart == 5 || oldSelectionStart == 9)
+                {
+                    ++oldSelectionStart;
+                }
+            }
+            else
+            {
+                // Move cursor behind phone format character
+                if (oldSelectionStart == 5 || oldSelectionStart == 9)
+                {
+                    --oldSelectionStart;
+                }
+            }
+
+            textBox.SelectionStart = oldSelectionStart;
         }
 
-        private void PhoneTextChanged(object sender, TextChangedEventArgs e)
+        /// <summary>
+        /// Calls the phone string formatter whenever a user enters text
+        /// </summary>
+        private void Phone_TextChanged(object sender, TextChangedEventArgs e)
         {
             var textBox = sender as TextBox;
-            string number = textBox.Text;
-            if (input == MessageType.Number)
-            {
-                textBox.Text = PhoneNumberFormatter(number);
+            bool insert = textBox.Text.Length > oldPhoneLength;
+            PhoneNumberFormatter(textBox, insert);
+            oldPhoneLength = textBox.Text.Length;
+        }
 
-                // This gets kinda bad when the user tries to insert or delete from the middle
-                if (textBox.Text.Length != 0)
-                {
-                    textBox.SelectionStart = textBox.Text.Length;
-                }
+        /// <summary>
+        /// Displays user help information when Skype name textbox is clicked
+        /// </summary>
+        private void SkypeName_GotFocus(object sender, RoutedEventArgs e)
+        {
+            this.skypeFocused = true;
+            UserHelpSkype.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Hides user help information when cursor is removed from Skype name textbox
+        /// </summary>
+        private void SkypeName_LostFocus(object sender, RoutedEventArgs e)
+        {
+            this.skypeFocused = false;
+            if (!this.helpOn)
+            {
+                UserHelpSkype.Visibility = Visibility.Collapsed;
             }
         }
 
+        /// <summary>
+        /// Displays user help information when phone or email textbox are clicked
+        /// </summary>
+        private void Contact_GotFocus(object sender, RoutedEventArgs e)
+        {
+            this.contactFocused = true;
+            UserHelpContact.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Hides user help information when cursor is removed from phone or email textbox
+        /// </summary>
+        private void Contact_LostFocus(object sender, RoutedEventArgs e)
+        {
+            this.contactFocused = false;
+            if (!this.helpOn)
+            {
+                UserHelpContact.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Displays user help information when cursor hovers over phone or email textbox
+        /// </summary>
+        private void Contact_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            UserHelpContact.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Hides user help information when cursor is removed from phone or email textbox
+        /// </summary>
+        private void Contact_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (!(this.helpOn || contactFocused))
+            {
+                UserHelpContact.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Displays user help information when cursor hovers over Skype name textbox
+        /// </summary>
+        private void SkypeName_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            UserHelpSkype.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Hides user help information when cursor is removed from Skype name textbox
+        /// </summary>
+        private void SkypeName_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (!(this.helpOn || skypeFocused))
+            {
+                UserHelpSkype.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Toggles the help menu when the help icon is clicked
+        /// </summary>
+        private void HelpButtonClicked(object sender, RoutedEventArgs e)
+        {
+            if ((bool)this.HelpButton.IsChecked)
+            {
+                StepOne.Visibility = Visibility.Visible;
+                StepTwo.Visibility = Visibility.Visible;
+                StepThree.Visibility = Visibility.Visible;
+                UserHelpSkype.Visibility = Visibility.Visible;
+                UserHelpContact.Visibility = Visibility.Visible;
+                this.helpOn = true;
+            }
+            else
+            {
+                StepOne.Visibility = Visibility.Collapsed;
+                StepTwo.Visibility = Visibility.Collapsed;
+                StepThree.Visibility = Visibility.Collapsed;
+                UserHelpSkype.Visibility = Visibility.Collapsed;
+                UserHelpContact.Visibility = Visibility.Collapsed;
+                this.helpOn = false;
+            }
+        }
+
+        private void FontButtonClicked(object sender, RoutedEventArgs e)
+        {
+            // Toggle size
+            this.textSize = this.textSize == TextSize.Small ? TextSize.Large : TextSize.Small;
+
+            // Apply new size to all text
+            StepOne.FontSize = StepTwo.FontSize = StepThree.FontSize = (double)this.textSize;
+            UserNotifications.FontSize = UserHelpContact.FontSize = UserHelpSkype.FontSize = (double)this.textSize;
+            EmailHeader.FontSize = SkypeHeader.FontSize = PhoneHeader.FontSize = (double)this.textSize;
+            EmailHeader.Height = SkypeHeader.Height = PhoneHeader.Height = this.textSize == TextSize.Small ? 20 : 30;
+            RequestHelp.FontSize = AvailableDoctors.FontSize = (double)this.textSize;
+        }
+
+        /// <summary>
+        /// Notifies the user using the Usernotifications textbox
+        /// </summary>
         private async void NotifyUser(string content)
         {
             UserNotifications.Text = content;
 
             await Task.Delay(3000);
 
+            // Clear text if notification did not change in the past three seconds
             if (UserNotifications.Text == content)
             {
                 UserNotifications.Text = string.Empty;
             }
         }
 
-        private void Phone_PointerEntered(object sender, PointerRoutedEventArgs e)
-        {
-            UserHelp.Text = "Notify Emergency Contact sends a text or email to the specified number containing a link to the emergency contact PatientNet portal.";
-        }
-
-        private void SkypeName_PointerEntered(object sender, PointerRoutedEventArgs e)
-        {
-            UserHelp.Text = "Notify All Doctors sends a notification to all available doctors. The doctors will video call you via the provided Skype name.";
-        }
-
-        private void Help_PointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            UserHelp.Text = string.Empty;
-        }
     }
 }

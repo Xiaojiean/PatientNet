@@ -8,17 +8,25 @@ const WebSocketServer = require('ws').Server,
 	http = require('https'),
 	app = express(),
 	fs = require('fs'),
-	config = require('./config.js');
+	config = require('./config.js'),
+	schedule = require('node-schedule');
 
 var cfg = {
 	ssl: true,
 	ssl_key: './ssl/privkey.pem',
 	ssl_cert:'./ssl/fullchain.pem'
 };
-var wsClients = {};
+var wsClients = {}; //Stores a map of doctor IDs to a map of web session IDs to web socket clients.
+var availDocs = 0; //Number of available doctors.
 var emts = [];
 //Keys for TWilio
 var twilioClient = require('twilio')(config.twilioSid, config.twilioKey);
+var stats = {};
+
+schedule.scheduleJob('0 0 0 * * *', function(){
+	//Everyday at midnight, reset the statistics.
+	stats = {};
+});
 
 //Keys for SendGrid
 const sgMail = require('@sendgrid/mail');
@@ -43,28 +51,6 @@ app.use(function(req, res, next) {
 	next();
 });
 
-/*
-app.post('/api/v1/sendsms', function(req, res) {
-	console.log('/api/v1/sendsms received: ' + JSON.stringify(req.body));
-	var obj = {};
-	obj['type'] = 'sms';
-	obj['number'] = req.body.number;
-	obj['message'] = JSON.stringify(req.body);
-	sendMessage(obj);
-	res.status(200).send("OK");
-});
-
-app.post('/api/v1/sendemail', function(req, res) {
-	console.log('/api/v1/sendemail received: ' + JSON.stringify(req.body));
-	var obj = {};
-	obj['type'] = 'email';
-	obj['email'] = req.body.email;
-	obj['message'] = JSON.stringify(req.body);
-	sendMessage(obj);
-	res.status(200).send("OK");
-});
-*/
-
 app.post('/api/v1/requestdoctor', function(req, res) {
 	console.log('/api/v1/requestdoctor received: ' + JSON.stringify(req.body));
 	var obj = {};
@@ -72,17 +58,25 @@ app.post('/api/v1/requestdoctor', function(req, res) {
 	obj['skypeid'] = req.body.skypeid;
 	obj['email'] = req.body.email;
 	obj['number'] = req.body.number;
+	obj['requestTime'] = new Date();
 	obj['message'] = JSON.stringify(req.body);
 	emts.push(obj);
 	sendMessage(obj);
 	res.status(200).send("OK");
 });
 
-function emtAccepted(emtId) {
+app.post('/api/v1/getavailabledoctors', function(req, res) {
+	console.log('/api/v1/getavailabledoctors received: ' + JSON.stringify(req.body));
+	updateClients();
+	var obj = {};
+	obj['availabledoctors'] = availDocs;
+	res.status(200).send(JSON.stringify(obj));
+});
+
+function emtAccepted(emtId, webId) {
 	for(var i = emts.length - 1; i >= 0; i--) {
 		if (emts[i].skypeid == emtId) {
 			emts.splice(i, 1);
-			break;
 		}
 	}
 	var obj = {};
@@ -90,33 +84,61 @@ function emtAccepted(emtId) {
 	obj['skypeid'] = emtId;
 	obj['message'] = 'Remove id: ' + emtId;
 	sendMessage(obj);
+	availDocs--;
 }
 
 function sendMessage(obj){
 	updateClients();
-	if(wsClients.length == 0) {
+	if(Object.keys(wsClients).length == 0) {
 		//res.status(500).send("No doctors connected");
 		return;
 	}
 	for (var key in wsClients) {
-		var cli = wsClients[key];
-		if(cli.readyState == cli.OPEN) {
-			console.log("Sending obj: " + JSON.stringify(obj) + " to key: " + key);
-			cli.send(JSON.stringify(obj));
+		var cliList = wsClients[key];
+		for (var i in cliList) {
+			var cli = cliList[i];	
+			if(cli.readyState == cli.OPEN) {
+				console.log("Sending obj: " + JSON.stringify(obj) + " to key: " + key);
+				cli.send(JSON.stringify(obj));
+			}
 		}
 	}
+}
+
+function sendMessageToWeb(obj, docId, webId) {
+	for (var key in wsClients) {
+		if (key == docId){	
+			var cliList = wsClients[key];
+			for (var i in cliList) {
+				if (i == webId) {
+					var cli = cliList[i];
+					if(cli.readyState == cli.OPEN) {
+						console.log("Sending obj: " + JSON.stringify(obj) + " to key: " + key);
+						cli.send(JSON.stringify(obj));
+					}
+				}
+			}
+		}
+	}	
 }
 
 //Check if clients are open, if not, remove them from dictionary.
 function updateClients() {
 	var tmp = {};
 	for (var key in wsClients) {
-		var cli = wsClients[key];
-		if(cli.readyState != cli.OPEN) {
-			console.log("Removing id: " + key);
-			delete wsClients[cli];
-		} else {
-			tmp[key] = cli;
+		var cliList = wsClients[key];
+		for (var i in cliList) {
+			var cli = cliList[i];
+			if(cli.readyState != cli.OPEN) {
+				console.log("Removing id: " + i);
+				delete cliList[cli];
+				availDocs--;
+			} else {
+				if(!(key in tmp)){
+					tmp[key] = {};
+				}
+				tmp[key][i] = cli;
+			}
 		}
 	}
 	wsClients = tmp;
@@ -139,13 +161,30 @@ wss.on('connection', function(client) {
 	client.on('message', function(message) {
 		var msg = JSON.parse(message);
 		if (msg.type == 'hello') {
-			console.log("received id: " + msg.webId);
-			wsClients[msg.webId] = client;
+			console.log("received doc id: " + msg.docId, " webId: " + msg.webId);
+			if(!(msg.docId in wsClients)) {
+				//We haven't seen this doctor yet.
+				//Create an object that maps the web session IDs to web socket clients.
+				wsClients[msg.docId] = {};
+			}
+			wsClients[msg.docId][msg.webId] = client;
 			for (var i = 0; i < emts.length; i++) {
 				client.send(JSON.stringify(emts[i]));
 			}
+			availDocs++;
+			if (msg.docId in stats) {
+				var obj = {};
+				obj['type'] = 'stats';
+				obj['stats'] = JSON.stringify(stats[msg.docId]);
+				console.log("Sending stats to: " + msg.docId);
+				client.send(JSON.stringify(obj));
+			} else {
+				stats[msg.docId] = {};
+			}
 		} else if(msg.type == 'sms'){
-			emtAccepted(msg.skypeid);
+			//Received request to send SMS.
+			emtAccepted(msg.skypeid, msg.webId);
+			console.log("Sending text to: " + msg.number);
 			twilioClient.messages.create({
 				to: "+1" + msg.number,
 				from: "+12062026089",
@@ -157,10 +196,44 @@ wss.on('connection', function(client) {
 		
 			});
 		} else if (msg.type == 'email') {
-			emtAccepted(msg.skypeid);
+			//Received request to send email.
+			emtAccepted(msg.skypeid, msg.webId);
+			console.log("Sending email to: " + msg.email);
 			emailMsg.to = msg.email;
 			emailMsg.text = emailBody + msg.link;
 			sgMail.send(emailMsg);
+		} else if (msg.type == 'accept') {
+			//Resolved Skype ID without an email or sms request.
+			emtAccepted(msg.skypeid, msg.webId);
+		} else if (msg.type == 'upload') {
+			//Received request from contact to upload a photo.
+			//Notify the corresponding doctor web session.
+			var payload = {};
+			payload['type'] = 'upload';
+			payload['filename'] = msg.filename;
+			payload['handle'] = msg.handle;
+			payload['message'] = JSON.stringify(msg);
+			sendMessageToWeb(payload, msg.docId, msg.webId);
+		} else if (msg.type == 'delete') {
+			//Received request from contact to delete a photo.
+			//Notify the corresponding doctor web session.
+			var payload = {};
+			payload['type'] = 'delete';
+			payload['filename'] = msg.filename;
+			payload['handle'] = msg.handle;
+			payload['message'] = JSON.stringify(msg);
+			sendMessageToWeb(payload, msg.docId, msg.webId);
+		} else if (msg.type == 'endCall') {
+			//Received notification that doctor has finished call.
+			//Update the number of available doctors.
+			console.log("Received endCall from: " + msg.webId);
+			availDocs++;
+		} else if (msg.type == 'stats') {
+			//Received the stats from a doctor.
+			//Update today's statistics.
+			console.log("Received stats from: " + msg.webId);
+			console.log("Stats: " + msg.stats);
+			stats[msg.docId] = JSON.parse(msg.stats);
 		}
 	});
 });

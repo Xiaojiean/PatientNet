@@ -1,293 +1,293 @@
-<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT license. -->
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT license. -->
 <!-- Followed some examples from https://github.com/OfficeDev/skype-web-sdk-simple-sample-for-SfB-online -->
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>PatientNet Doctor</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="app.css"><!--layout file-->
-  <script src="./config.js"></script> <!-- setting file-->
-  <script src="https://swx.cdn.skype.com/shared/v/1.2.15/SkypeBootstrap.min.js"></script><!--Skype Web SDK-->
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>PatientNet Doctor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="app.css"><!--layout file-->
+    <script src="./config.js"></script> <!-- setting file-->
+    <script src="https://swx.cdn.skype.com/shared/v/1.2.15/SkypeBootstrap.min.js"></script><!--Skype Web SDK-->
 </head>
 <body>
-  <div class="topnav">
-	  <h1>PatientNet Site</h1>
-  </div>
-  <div id="body">
-  	<div id="SigninStatus"></div>
-  	<div id="SigninEmt"></div>
-	<div id="loader"></div>
-  	<div id="conversationWindow"></div>
-  </div>  
-  <script type="text/javascript">
-    var apiManager = null;
-    var token = null;
-    var emtSip = null;
-    var emtClient = null;
-    var contactClient = null;
-    var cfg = {
-	    wsHost: 'wss://481patientnet.com:3001'
-    };
-    wsc = null;
-    var linkuri = "481patientnet.com/client.html";
-    var shortLink = null;
-    var orgId = "patientnet2";
-    var hostId = null;
-    var meetingId = null;
-    var googleApiKey = "AIzaSyBSb9EvtAm8Ntcj5-Rt4L-9gqMeJmMj7kA";
-
-    (function () {
-	if (!location.href.includes("access_token")) {
-		location.assign(
-		    config.loginurl+
-		    '&client_id='+config.clientid+
-          	    '&resource='+config.resource+
-          	    '&redirect_uri='+ config.docReplyurl
-		);
-	}
-      if (wsc == null) {
-	      wsc = new WebSocket(cfg.wsHost);
-    	      wsc.onmessage = function(evt) {
-		      var signal = JSON.parse(evt.data);
-		      console.log("Server received message: " + signal.message);
-		      if(signal.type == 'sms') {
-			var obj = {};
-			obj['link'] = shortLink;
-			obj['number'] = signal.number;
-		        console.log("Shortlink: " + shortLink);
-		        wsc.send(JSON.stringify(obj));
-		      } else if (signal.type == 'request') {
-			      if(confirm("Would you want to accept a request from EMT with id: " + signal.skypeid + "?")) {
-				//createConversation("sip:wmcayo@patientnet2.onmicrosoft.com");
-				window.open("https://481patientnet.com/index.html?" + signal.skypeid + "#access_token=" + token, "_blank"); 
-			      }
-		      }
-	    	};
-	      wsc.onclose = function() {
-	      	console.log("Websocket connection closed.");
-		wsc = null;
-	      }
-      }
-
-      console.log("uri: " + window.location.search.substring(1));
-      //Retrieves access token from URL fragment
-      if(window.location.search.substring(1).includes('sip')){
-	emtSip = window.location.search.substring(1);
-	skypeInit(skypeLogin);
-      }
-      else if(location.hash) {
-        var hasharr = location.hash.substr(1).split("&");
-        hasharr.forEach(function(hashelem) {
-          var elemarr = hashelem.split("=");
-          if(elemarr[0] == "access_token") {
-            console.log('Access Token: '+ elemarr[1]);
-	    token = elemarr[1];
-	    skypeInit(skypeLogin);
-	  } 
-        }, this);
-      }
-	
-      /*
-      Grant app with Admin Consent
-      *//*
-      document.getElementById('AdminConsent').onclick= function(){
-        location.assign('https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token'+
-          '&client_id='+config.clientid+
-          '&redirect_uri='+config.docReplyurl+
-          //'&response_mode=form_post'+ //Because it is static web page and cant' handle post method, I comment out it.
-          '&nonce=samplestring'+// You can add code to defend Replay Attack with nonce property
-          '&resource='+config.resource+
-          '&prompt=admin_consent'
-        );
-      };*/
-           
-      function initHandlers(client) {
-              //Event handler: whenever app state changes, display its value
-              client.signInManager.state.changed(function (state) {
-		document.getElementById('SigninStatus').innerHTML = state;
-              });
-
-              //Event handler : it is handled when conversations added. ie. incoming call, outgoing call
-              client.conversationsManager.conversations.added(function(conversation){
-             
-                //Event handler : Get notified when conversation control receives an incoming call
-                conversation.selfParticipant.audio.state.changed(function (newValue, reason, oldValue) {
-                  // 'Notified' indicates that there is an incoming call
-                  if(newValue === 'Notified') {
-                    var person = conversation.participants(0).person;;
-                    var sip = person.id();
-
-                    if (confirm("Would you like to accept this incoming call from " + person.displayName() + "?")) {
-                        setTimeout(function() {
-                            // This accepts an incoming call with audio
-                            //conversation.audioService.accept();
-                            // To accept an incoming call with video enabled call
-                            conversation.videoService.accept();
-			    }, function(error){
-                        }, 0);
-                    } else {
-                        // Reject the incoming call
-                        conversation.audioService.reject();
-                    }
-                  }
-		});
-	      });
-      
-      }
-      /*
-      Initializing Skype Web SDK & Conversation Control.
-      On success, will login in the user to Sype as well by making a callback.
-      */
-      function skypeInit(_loginCallback) {
-          Skype.initialize({apiKey:config.apiKeyCC},function(api){
-              apiManager = api;
-              contactClient = api.UIApplicationInstance;
-	      initHandlers(contactClient);
-	      _loginCallback();
-
-          }, function(err){
-            console.log(err); 
-          });
-      }     
-      
-      /*
-      Sign-in Skype
-      */
-      function skypeLogin(){
-        var params =
-        {
-         "client_id": config.clientid,
-         "origins": ["https://webdir.online.lync.com/autodiscover/autodiscoverservice.svc/root"],
-         "cors": true,
-         "version": config.appName+'/1.0.0',
-         "redirect_uri": "/index.html"
+    <div class="topnav">
+        <h1>PatientNet Site</h1>
+    </div>
+    <div id="body">
+        <div id="SigninStatus"></div>
+        <div id="SigninEmt"></div>
+        <div id="loader"></div>
+        <div id="conversationWindow"></div>
+    </div>
+    <script type="text/javascript">
+        var apiManager = null;
+        var token = null;
+        var emtSip = null;
+        var emtClient = null;
+        var contactClient = null;
+        var cfg = {
+            wsHost: 'wss://481patientnet.com:3001'
         };
-        
-        contactClient.signInManager.signIn(params).then(function(){
-          document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + contactClient.personsAndGroupsManager.mePerson.displayName();
-	  //loadChat();
-	  //scheduleMeeting();
-	  createConversation(emtSip);
-        },function(error){
-          console.log(error);
-        });        
-      };
+        wsc = null;
+        var linkuri = "481patientnet.com/client.html";
+        var shortLink = null;
+        var orgId = "patientnet2";
+        var hostId = null;
+        var meetingId = null;
+        var googleApiKey = "AIzaSyBSb9EvtAm8Ntcj5-Rt4L-9gqMeJmMj7kA";
 
-      /*
-	 Generate a short url with Google Url Shortener.
-      */
-      function shortenUrl(longUrl) {	
-	      var req = new XMLHttpRequest();
-	      req.open("POST", "https://www.googleapis.com/urlshortener/v1/url?key="+googleApiKey);
-	      req.setRequestHeader("Content-Type", "application/json");
-	      req.send(JSON.stringify({ "longUrl": longUrl }));
-	      req.onreadystatechange = function() {
-		      if(this.readyState == 4 && this.status == 200) {
-		      	console.log("Resp: " + req.responseText);
-			shortLink = JSON.parse(req.responseText).id;
-	      	      }
-	      }
-      }
+        (function () {
+            if (!location.href.includes("access_token")) {
+                location.assign(
+                    config.loginurl +
+                    '&client_id=' + config.clientid +
+                    '&resource=' + config.resource +
+                    '&redirect_uri=' + config.docReplyurl
+                );
+            }
+            if (wsc == null) {
+                wsc = new WebSocket(cfg.wsHost);
+                wsc.onmessage = function (evt) {
+                    var signal = JSON.parse(evt.data);
+                    console.log("Server received message: " + signal.message);
+                    if (signal.type == 'sms') {
+                        var obj = {};
+                        obj['link'] = shortLink;
+                        obj['number'] = signal.number;
+                        console.log("Shortlink: " + shortLink);
+                        wsc.send(JSON.stringify(obj));
+                    } else if (signal.type == 'request') {
+                        if (confirm("Would you want to accept a request from EMT with id: " + signal.skypeid + "?")) {
+                            //createConversation("sip:wmcayo@patientnet2.onmicrosoft.com");
+                            window.open("https://481patientnet.com/index.html?" + signal.skypeid + "#access_token=" + token, "_blank");
+                        }
+                    }
+                };
+                wsc.onclose = function () {
+                    console.log("Websocket connection closed.");
+                    wsc = null;
+                }
+            }
 
-      /*
-	 scheduleMeeting creates a Meeting that allows anonymous users to join.
-	 It then renders the conversationsManager with the meeting.
-      */
-      function scheduleMeeting() {
-      	var meeting = contactClient.conversationsManager.createMeeting()
-		.accessLevel("Everyone")
-		.subject("Test meeting")
-	meeting.onlineMeetingUri.get().then(function(uri) {
-		console.log("Started meeting. Uri: " + uri);
-		console.log("Started meeting. joinurl: " + meeting.joinUrl);
+            console.log("uri: " + window.location.search.substring(1));
+            //Retrieves access token from URL fragment
+            if (window.location.search.substring(1).includes('sip')) {
+                emtSip = window.location.search.substring(1);
+                skypeInit(skypeLogin);
+            }
+            else if (location.hash) {
+                var hasharr = location.hash.substr(1).split("&");
+                hasharr.forEach(function (hashelem) {
+                    var elemarr = hashelem.split("=");
+                    if (elemarr[0] == "access_token") {
+                        console.log('Access Token: ' + elemarr[1]);
+                        token = elemarr[1];
+                        skypeInit(skypeLogin);
+                    }
+                }, this);
+            }
 
-		var args = uri.split(/[@:]+/);
-		var hostId = args[1];
-		var meetingId = args[args.length-1];
-		var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId;
-		shortenUrl(longUrl);
-		//TODO: figure out how to send this url to client.
-		var conversation = contactClient.conversationsManager.getConversationByUri(uri);
-		loadChat(conversation, null, "conversationWindow");
-	}); 
-      }
+            /*
+            Grant app with Admin Consent
+            *//*
+            document.getElementById('AdminConsent').onclick= function(){
+              location.assign('https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token'+
+                '&client_id='+config.clientid+
+                '&redirect_uri='+config.docReplyurl+
+                //'&response_mode=form_post'+ //Because it is static web page and cant' handle post method, I comment out it.
+                '&nonce=samplestring'+// You can add code to defend Replay Attack with nonce property
+                '&resource='+config.resource+
+                '&prompt=admin_consent'
+              );
+            };*/
 
-      /*
-	 createConversation creates a 1:1 Conversation with the sip user.
-	 It then renders the conversationsManager with the meeting.
-      */
-      function createConversation(sip){
-      	var conversation = contactClient.conversationsManager.createConversation();
-	//var emt = conversation.createParticipant(sip);
-	//conversation.participants.add(emt);
-	console.log("sip: " + sip);
-	loadChat(null, sip, "conversationContainer");
-      }
-      
-      /*
-      Render conversation control on outgoing call
-      */
-      function loadChat(conversation, sip, contain){
-	//TODO: Show contact list instead of auto populating this contact.
-	var uris = null;
-	if(!conversation) {
-		uris = [sip];
-	}
-	//var container = document.createElement('div');
-	//document.getElementById('conversationContainer').appendChild(container);
-	var container = document.createElement('div');
-	document.getElementById('conversationWindow').appendChild(container);
-	
-	//render Conversation Control in a web page.
-        var promise = apiManager.renderConversation(container,{
-          //Start outgoing call with chat window
-          modalities:['Chat'],
-	  conversation: conversation,
-          participants: uris
-        })
-	promise.then(function(conversation) {
-		//Rendered successfully
-		//Remove loader.
-		document.getElementById("loader").style.display = "none";
+            function initHandlers(client) {
+                //Event handler: whenever app state changes, display its value
+                client.signInManager.state.changed(function (state) {
+                    document.getElementById('SigninStatus').innerHTML = state;
+                });
 
-		conversation.chatService.start();
-		//conversation.audioService.start();
-		//conversation.videoService.start();
-	}, function(error) {
-		console.log("Error: " + error);
-	});
-	/*
-	var newDiv = document.createElement('div');
-	var control = document.getElementById('conversationContainer');
-	control.appendChild(newDiv);
-	
-        apiManager.renderConversation(newDiv,{
-          //Start outgoing call with chat window
-          modalities:['Chat'],
-          participants: uris
-	}).then(function(conversation) {
-		//Rendered successfully
-		conversation.chatService.start();
-	}, function(error) {
-		console.log("Error: " + error);
-	});
-	*/
+                //Event handler : it is handled when conversations added. ie. incoming call, outgoing call
+                client.conversationsManager.conversations.added(function (conversation) {
 
-      };
+                    //Event handler : Get notified when conversation control receives an incoming call
+                    conversation.selfParticipant.audio.state.changed(function (newValue, reason, oldValue) {
+                        // 'Notified' indicates that there is an incoming call
+                        if (newValue === 'Notified') {
+                            var person = conversation.participants(0).person;;
+                            var sip = person.id();
 
-      function showContacts() {
-	var tagContactList = createGroupView(client.personsAndGroupsManager.all.persons, 'Contact List');
-	//var control = document.getElementById('conversationContainer');
-	//control.appendChild(tagName);
-      };
-      
-      function createGroupView(contacts, title) {
-      	//var tagName = document.createElement('div');
-	//tagname.className += " group-name";
-      	console.log(contacts);
-      }
-    }());
-  </script>
+                            if (confirm("Would you like to accept this incoming call from " + person.displayName() + "?")) {
+                                setTimeout(function () {
+                                    // This accepts an incoming call with audio
+                                    //conversation.audioService.accept();
+                                    // To accept an incoming call with video enabled call
+                                    conversation.videoService.accept();
+                                }, function (error) {
+                                }, 0);
+                            } else {
+                                // Reject the incoming call
+                                conversation.audioService.reject();
+                            }
+                        }
+                    });
+                });
+
+            }
+            /*
+            Initializing Skype Web SDK & Conversation Control.
+            On success, will login in the user to Sype as well by making a callback.
+            */
+            function skypeInit(_loginCallback) {
+                Skype.initialize({ apiKey: config.apiKeyCC }, function (api) {
+                    apiManager = api;
+                    contactClient = api.UIApplicationInstance;
+                    initHandlers(contactClient);
+                    _loginCallback();
+
+                }, function (err) {
+                    console.log(err);
+                });
+            }
+
+            /*
+            Sign-in Skype
+            */
+            function skypeLogin() {
+                var params =
+                    {
+                        "client_id": config.clientid,
+                        "origins": ["https://webdir.online.lync.com/autodiscover/autodiscoverservice.svc/root"],
+                        "cors": true,
+                        "version": config.appName + '/1.0.0',
+                        "redirect_uri": "/index.html"
+                    };
+
+                contactClient.signInManager.signIn(params).then(function () {
+                    document.getElementById('SigninStatus').innerHTML = 'Signed in as ' + contactClient.personsAndGroupsManager.mePerson.displayName();
+                    //loadChat();
+                    //scheduleMeeting();
+                    createConversation(emtSip);
+                }, function (error) {
+                    console.log(error);
+                });
+            };
+
+            /*
+           Generate a short url with Google Url Shortener.
+            */
+            function shortenUrl(longUrl) {
+                var req = new XMLHttpRequest();
+                req.open("POST", "https://www.googleapis.com/urlshortener/v1/url?key=" + googleApiKey);
+                req.setRequestHeader("Content-Type", "application/json");
+                req.send(JSON.stringify({ "longUrl": longUrl }));
+                req.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        console.log("Resp: " + req.responseText);
+                        shortLink = JSON.parse(req.responseText).id;
+                    }
+                }
+            }
+
+            /*
+           scheduleMeeting creates a Meeting that allows anonymous users to join.
+           It then renders the conversationsManager with the meeting.
+            */
+            function scheduleMeeting() {
+                var meeting = contactClient.conversationsManager.createMeeting()
+                    .accessLevel("Everyone")
+                    .subject("Test meeting")
+                meeting.onlineMeetingUri.get().then(function (uri) {
+                    console.log("Started meeting. Uri: " + uri);
+                    console.log("Started meeting. joinurl: " + meeting.joinUrl);
+
+                    var args = uri.split(/[@:]+/);
+                    var hostId = args[1];
+                    var meetingId = args[args.length - 1];
+                    var longUrl = linkuri + "?org=" + orgId + "&user=" + hostId + "&id=" + meetingId;
+                    shortenUrl(longUrl);
+                    //TODO: figure out how to send this url to client.
+                    var conversation = contactClient.conversationsManager.getConversationByUri(uri);
+                    loadChat(conversation, null, "conversationWindow");
+                });
+            }
+
+            /*
+           createConversation creates a 1:1 Conversation with the sip user.
+           It then renders the conversationsManager with the meeting.
+            */
+            function createConversation(sip) {
+                var conversation = contactClient.conversationsManager.createConversation();
+                //var emt = conversation.createParticipant(sip);
+                //conversation.participants.add(emt);
+                console.log("sip: " + sip);
+                loadChat(null, sip, "conversationContainer");
+            }
+
+            /*
+            Render conversation control on outgoing call
+            */
+            function loadChat(conversation, sip, contain) {
+                //TODO: Show contact list instead of auto populating this contact.
+                var uris = null;
+                if (!conversation) {
+                    uris = [sip];
+                }
+                //var container = document.createElement('div');
+                //document.getElementById('conversationContainer').appendChild(container);
+                var container = document.createElement('div');
+                document.getElementById('conversationWindow').appendChild(container);
+
+                //render Conversation Control in a web page.
+                var promise = apiManager.renderConversation(container, {
+                    //Start outgoing call with chat window
+                    modalities: ['Chat'],
+                    conversation: conversation,
+                    participants: uris
+                })
+                promise.then(function (conversation) {
+                    //Rendered successfully
+                    //Remove loader.
+                    document.getElementById("loader").style.display = "none";
+
+                    conversation.chatService.start();
+                    //conversation.audioService.start();
+                    //conversation.videoService.start();
+                }, function (error) {
+                    console.log("Error: " + error);
+                });
+                /*
+                var newDiv = document.createElement('div');
+                var control = document.getElementById('conversationContainer');
+                control.appendChild(newDiv);
+
+                    apiManager.renderConversation(newDiv,{
+                      //Start outgoing call with chat window
+                      modalities:['Chat'],
+                      participants: uris
+                }).then(function(conversation) {
+                    //Rendered successfully
+                    conversation.chatService.start();
+                }, function(error) {
+                    console.log("Error: " + error);
+                });
+                */
+
+            };
+
+            function showContacts() {
+                var tagContactList = createGroupView(client.personsAndGroupsManager.all.persons, 'Contact List');
+                //var control = document.getElementById('conversationContainer');
+                //control.appendChild(tagName);
+            };
+
+            function createGroupView(contacts, title) {
+                //var tagName = document.createElement('div');
+                //tagname.className += " group-name";
+                console.log(contacts);
+            }
+        }());
+    </script>
 </body>
