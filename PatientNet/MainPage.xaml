@@ -92,7 +92,7 @@
         <!-- Textbox to enter EMT's skype name -->
         <RelativePanel Width="240" Height="70" Margin="-560,0,0,90">
             <Image Source="Assets/PatientNet_Doctor_Pic.png" Width="60" Height="60" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-6,0,6,0"/>
-            <TextBox
+            <AutoSuggestBox
                 x:Name="SkypeName" 
                 Background="Transparent" 
                 Width="170" 
@@ -107,12 +107,12 @@
                 PointerExited="SkypeName_PointerExited"
                 GotFocus="SkypeName_GotFocus"
                 LostFocus="SkypeName_LostFocus">
-                <TextBox.Header>
+                <AutoSuggestBox.Header>
                     <Border BorderBrush="{x:Null}" Height="30">
                         <TextBlock x:Name="SkypeHeader" Text="Enter Skype Name" FontSize="15" Height="20" VerticalAlignment="Bottom"/>
                     </Border>
-                </TextBox.Header>
-            </TextBox>
+                </AutoSuggestBox.Header>
+            </AutoSuggestBox>
         </RelativePanel>
 
         <!-- Textbox to enter emergency contact phone number -->
