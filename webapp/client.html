@@ -343,6 +343,9 @@
                     },
                     error: function (err) {
                         console.log("Error: " + JSON.stringify(err.body));
+			alert("Sorry! We are having trouble connecting you with the doctor. Please click to refresh and try again.");
+			//Refresh the page after alert is acknowledged.
+			window.location.reload();
                     }
                 });
             }
