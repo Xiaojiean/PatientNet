@@ -21,14 +21,6 @@ h1 {
 	margin-left: 10px;
 }
 
-.topnav{
-	background-color: #b3d1ff;
-	width: 100%;
-	height: 50px;
-	position: fixed;
-	top: 0px;
-	z-index:50;
-}
 .navbar-default {
 	background-color: #b3d1ff;
 }
@@ -114,11 +106,6 @@ h1 {
 	text-align:center;
 	/*position: relative;*/
 }
-/*
-#conversationWindow {
-	margin-left:auto;
-	margin-right:auto;
-}*/
 
 #container{
 	min-height:100%;
