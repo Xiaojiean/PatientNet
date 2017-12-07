@@ -132,7 +132,9 @@ function updateClients() {
 			if(cli.readyState != cli.OPEN) {
 				console.log("Removing id: " + i);
 				delete cliList[cli];
-				availDocs--;
+				if (availDocs > 0){
+					availDocs--;
+				}
 			} else {
 				if(!(key in tmp)){
 					tmp[key] = {};
