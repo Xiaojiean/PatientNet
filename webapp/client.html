@@ -80,6 +80,10 @@
             console.log("URL BEFORE LOAD", window.location.href);
             console.log("URL arguments:", window.location.search.substring(1));
             contact = prompt("Please enter your name", "Emergency Contact");
+	    if (contact == null || contact == "") {
+	    	//User cancelled the prompt.
+		contact = "Emergency Contact";
+	    }
         };
 
         if (wsc == null) {
