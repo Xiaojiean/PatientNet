@@ -23,6 +23,7 @@ h1 {
 
 .navbar-default {
 	background-color: #b3d1ff;
+	z-index:0;
 }
 .navbar-default .navbar-nav>.active>a{
 	background-color: #4EB1BA;
