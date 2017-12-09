@@ -10,13 +10,12 @@
     <script src="./config.js"></script> <!-- setting file-->
     <script src="https://swx.cdn.skype.com/shared/v/1.2.15/SkypeBootstrap.min.js"></script><!--Skype Web SDK-->
     <script src="https://static.filestackapi.com/v3/filestack.js"></script><!--Filepicker-->
-    <script src="./node_modules/intro.js/intro.js"></script><!--Intro.js-->
-    <link rel="stylesheet" href="./node_modules/intro.js/introjs.css"><!--Intro.js-->
-    <link rel="stylesheet" href="./node_modules/intro.js/themes/introjs-flattener.css"><!--Flattener theme-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"><!--Font Awesome icons-->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script><!-- jQuery library -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><!-- Latest compiled JavaScript -->
+    <link rel="stylesheet" href="./node_modules/bootstrap-tour/build/css/bootstrap-tour.min.css"><!--Bootstrap page tour style-->
+    <script src="./node_modules/bootstrap-tour/build/js/bootstrap-tour.min.js"></script><!--Bootstrap page tour js-->
     <link rel="stylesheet" href="app.css"><!--layout file-->
 </head>
 <body>
@@ -106,37 +105,37 @@
             avgCallSec: 0
         }
 	//The elements for the page tour on the initial page.
-        var initialOptions = [
+	var initialOptions = [
+	    {
+		element: document.getElementById('listdiv'),
+		content: "The usernames of EMTs who make requests will show up in this list."
+	    },
             {
-                element: document.getElementById('listdiv'),
-                intro: "The usernames of EMTs who make requests will show up in this list."
+               	element: document.getElementById('emtlist'),
+               	content: "Select an EMT to create an anonymous Skype meeting for the emergency contact and a Skype call with the EMT."
             },
             {
-                element: document.getElementById('emtlist'),
-                intro: "Select an EMT to create an anonymous Skype meeting for the emergency contact and a Skype call with the EMT."
-            },
-            {
-                element: document.getElementById('stats'),
-                intro: "Click to view statistics from this session such as number of requests served and average EMT wait time."
+               	element: document.getElementById('stats'),
+               	content: "Click to view statistics from this session such as number of requests served and average EMT wait time."
             }
-        ];
+	];
 	//The elements for the page tour on the conversation page.
         var convoOptions = [
             {
                 element: document.getElementById('conversationWindow'),
-                intro: "Use this space to send instant messages or start an audio call with the emergency contact."
+                content: "Use this space to send instant messages or start an audio call with the emergency contact."
             },
             {
                 element: document.getElementById('filelistdiv'),
-                intro: "Files that the emergency contact uploads will appear here."
+                content: "Files that the emergency contact uploads will appear here."
             },
             {
                 element: document.getElementById('fileslist'),
-                intro: "Click on a document to view and/or download."
+                content: "Click on a document to view and/or download."
             },
             {
                 element: document.getElementById('endCall'),
-                intro: "Click this to end the conversation. This will remove the chat window, delete the uploaded files, and return to the list of waiting EMTs."
+                content: "Click this to end the conversation. This will remove the chat window, delete the uploaded files, and return to the list of waiting EMTs."
             }
         ];
         var STATE = {
@@ -299,17 +298,21 @@
 
 
         //Initialize and start the introjs object for the page tour.
+	//Followed example code at http://bootstraptour.com/.
         function startIntro() {
-            var intro = introJs();
             var options = initialOptions;
             if (state != STATE.INITIAL) {
                 options = convoOptions;
             }
-            intro.setOptions({
-                steps: options
-            });
 
-            intro.start();
+	    var tour = new Tour({
+		backdrop: true,
+		storage: false,
+		steps: options
+	    });
+
+	    tour.init();
+	    tour.restart();
         }
 
         window.onunload = (function () {
