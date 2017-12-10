@@ -44,7 +44,7 @@
                 <button id="pickerButton" onclick="openPicker()" style="display:none">Upload Files</button>
             </div>
             <div id="filelistdiv">
-                <p id="filesHelp" style="display:none; text-align:center">Click to view the files you've uploaded. These will be deleted when the conversation ends.</p>
+                <p id="filesHelp" style="display:none; text-align:center">Files you upload (e.g. medical records, physician information, DNR records, etc) will appear here. You can delete these, but they will also be deleted when the doctor ends the conversation.</p>
                 <ul id="fileslist">
                     <li id="emptyFileLi">
                         No files have been uploaded
@@ -214,11 +214,11 @@
                 },
                 {
                     element: document.getElementById('pickerButton'),
-                    content: "Use this button to upload files that only the doctor will be able to see. They will be deleted when the conversation ends."
+                    content: "Use this button to upload files such as medical records and physician information. Only the doctor will be able to see these and they will be deleted when the conversation ends."
                 },
                 {
                     element: document.getElementById('fileslist'),
-                    content: "Files that you upload will appear here. Click them to view and/or download."
+                    content: "Files that you upload will appear here. Click them to view. You can also delete them here which would remove them from the doctor's view as well."
                 },
             ];
 	    var tour = new Tour({
